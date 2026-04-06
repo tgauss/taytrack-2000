@@ -25,3 +25,9 @@
 {"ts":"2026-04-06T21:35:43Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/fun-facts.ts","tool":"Write"}
 {"ts":"2026-04-06T21:36:26Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/daily-journal.ts","tool":"Write"}
 {"ts":"2026-04-06T21:36:37Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/DailyJournal.tsx","tool":"Edit"}
+{"ts":"2026-04-06T22:05:42Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/game/page.tsx","tool":"Edit"}
+{"ts":"2026-04-06T22:18:18Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/AdventureMap.tsx","tool":"Edit"}
+{"ts":"2026-04-06T22:25:39Z","event":"file_write","path":"/Users/tgauss/.claude/plans/mighty-inventing-mountain.md","tool":"Write"}
+{"ts":"2026-04-06T22:46:24Z","event":"file_write","path":"/Users/tgauss/.claude/plans/mighty-inventing-mountain.md","tool":"Write"}
+{"ts":"2026-04-06T22:49:27Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/poi-data.ts","tool":"Write"}
+{"ts":"2026-04-06T22:53:16Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/AdventureMap.tsx","tool":"Write"}
