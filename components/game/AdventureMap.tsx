@@ -35,8 +35,8 @@ const ROUTE_SEGMENTS = [
 ];
 
 // Camera presets
-const ARRIVAL_ZOOM = 13.5;
-const ARRIVAL_PITCH = 60;
+const ARRIVAL_ZOOM = 15.5;
+const ARRIVAL_PITCH = 62;
 const FLIGHT_OVERVIEW_ZOOM = 3.5;
 const DRIVE_FOLLOW_ZOOM = 10;
 
@@ -54,6 +54,7 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
   const poiMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const waypointMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const mapInitialized = useRef(false);
+  const orbitAnimRef = useRef<number | null>(null);
 
   const [mapLoaded, setMapLoaded] = useState(false);
   const [phase, setPhase] = useState<ExplorationPhase>('idle');
@@ -215,6 +216,50 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
     });
   }, [removeWaypointMarkers]);
 
+  // ---- AUTO-ORBIT CAMERA (video game idle feel) ----
+
+  const startOrbit = useCallback(() => {
+    if (!map.current) return;
+    stopOrbit();
+    let bearing = map.current.getBearing();
+    const spin = () => {
+      if (!map.current) return;
+      bearing += 0.15; // slow rotation
+      map.current.easeTo({ bearing, duration: 50, easing: (t) => t });
+      orbitAnimRef.current = requestAnimationFrame(spin);
+    };
+    orbitAnimRef.current = requestAnimationFrame(spin);
+  }, []);
+
+  const stopOrbit = useCallback(() => {
+    if (orbitAnimRef.current) {
+      cancelAnimationFrame(orbitAnimRef.current);
+      orbitAnimRef.current = null;
+    }
+  }, []);
+
+  // Start orbit when exploring, stop when traveling
+  useEffect(() => {
+    if (phase === 'exploring' || phase === 'ready' || phase === 'idle') {
+      const timer = setTimeout(startOrbit, 1000);
+      return () => { clearTimeout(timer); stopOrbit(); };
+    } else {
+      stopOrbit();
+    }
+  }, [phase, startOrbit, stopOrbit]);
+
+  // Stop orbit when user interacts with map
+  useEffect(() => {
+    if (!map.current) return;
+    const handleInteraction = () => stopOrbit();
+    map.current.on('mousedown', handleInteraction);
+    map.current.on('touchstart', handleInteraction);
+    return () => {
+      map.current?.off('mousedown', handleInteraction);
+      map.current?.off('touchstart', handleInteraction);
+    };
+  }, [mapLoaded, stopOrbit]);
+
   // ---- MAP INITIALIZATION ----
 
   useEffect(() => {
@@ -258,6 +303,36 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
           'sky-atmosphere-sun-intensity': 15,
         },
       });
+
+      // Add 3D buildings layer
+      const layers = map.current.getStyle().layers;
+      const labelLayerId = layers?.find(
+        (layer) => layer.type === 'symbol' && layer.layout && 'text-field' in layer.layout
+      )?.id;
+
+      map.current.addLayer(
+        {
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'fill-extrusion',
+          minzoom: 12,
+          paint: {
+            'fill-extrusion-color': [
+              'interpolate', ['linear'], ['get', 'height'],
+              0, '#1a1a3e',
+              50, '#2a2a5e',
+              100, '#3a3a7e',
+              200, '#4a4a9e',
+            ],
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.85,
+          },
+        },
+        labelLayerId
+      );
 
       // Add vehicle trail source (empty, filled during animation)
       map.current.addSource('vehicle-trail', {
@@ -363,13 +438,14 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
         markersRef.current[id] = marker;
       });
 
-      // Add vehicle marker
+      // Add vehicle marker with pulsing ring
       const vehicleEl = document.createElement('div');
-      vehicleEl.innerHTML = `<div style="
-        font-size: 44px;
-        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
-        animation: bounce 0.5s ease-in-out infinite alternate;
-      ">✈️</div>`;
+      vehicleEl.innerHTML = `
+        <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+          <div class="vehicle-pulse-ring"></div>
+          <div class="vehicle-emoji">✈️</div>
+        </div>
+      `;
       vehicleEl.style.cssText = 'transform: translate(-50%, -50%);';
 
       vehicleMarkerRef.current = new mapboxgl.Marker({ element: vehicleEl })
@@ -381,6 +457,26 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
       style.textContent = `
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
         @keyframes poiFadeIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pulseRing {
+          0% { transform: scale(0.8); opacity: 0.6; }
+          50% { transform: scale(1.8); opacity: 0; }
+          100% { transform: scale(0.8); opacity: 0.6; }
+        }
+        .vehicle-emoji {
+          font-size: 48px;
+          filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+          animation: bounce 0.5s ease-in-out infinite alternate;
+          position: relative;
+          z-index: 2;
+        }
+        .vehicle-pulse-ring {
+          position: absolute;
+          width: 60px; height: 60px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(0,212,255,0.5) 0%, rgba(0,212,255,0) 70%);
+          animation: pulseRing 1.5s ease-in-out infinite;
+          z-index: 1;
+        }
         .mapboxgl-popup-content {
           background: rgba(15, 15, 30, 0.95) !important;
           border-radius: 16px !important;
@@ -402,6 +498,7 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
     });
 
     return () => {
+      stopOrbit();
       if (map.current) { map.current.remove(); map.current = null; }
       mapInitialized.current = false;
     };
@@ -419,8 +516,8 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
       if (nextLoc) {
         const segType = getSegmentType(currentLocation, nextLoc);
         const el = vehicleMarkerRef.current.getElement();
-        const div = el.querySelector('div');
-        if (div) div.innerHTML = segType === 'flight' ? '✈️' : '🚗';
+        const emojiDiv = el.querySelector('.vehicle-emoji');
+        if (emojiDiv) emojiDiv.innerHTML = segType === 'flight' ? '✈️' : '🚗';
       }
     }
   }, [currentLocation, mapLoaded]);
@@ -515,8 +612,8 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
     // Update vehicle emoji
     if (vehicleMarkerRef.current) {
       const el = vehicleMarkerRef.current.getElement();
-      const div = el.querySelector('div');
-      if (div) div.innerHTML = segmentType === 'flight' ? '✈️' : '🚗';
+      const emojiDiv = el.querySelector('.vehicle-emoji');
+      if (emojiDiv) emojiDiv.innerHTML = segmentType === 'flight' ? '✈️' : '🚗';
     }
 
     // Play sound
@@ -587,13 +684,15 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
     const cityName = LOCATIONS[nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation]?.name || '';
     setWelcomeCity(cityName);
 
-    // Fly to street level
+    // Dramatic arrival: sweep in from an angle
+    const arrivalBearing = Math.random() * 60 - 30; // random approach angle
     map.current?.flyTo({
       center: [toLoc.lng, toLoc.lat],
       zoom: ARRIVAL_ZOOM,
       pitch: ARRIVAL_PITCH,
-      bearing: 0,
-      duration: 2000,
+      bearing: arrivalBearing,
+      duration: 2500,
+      curve: 1.5,
     });
 
     // Phase: exploring (show POIs)
@@ -602,12 +701,12 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
       setWelcomeCity(null);
       const cityId = nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation;
       addPOIMarkers(cityId);
-    }, 2500);
+    }, 3000);
 
     // Phase: ready (show GO button again)
     setTimeout(() => {
       setPhase('ready');
-    }, 5000);
+    }, 6000);
 
     // Award achievements
     awardAchievements(nextLocation);
