@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, RotateCcw, Home, Gamepad2, BookOpen } from 'lucide-react';
 import Link from 'next/link';
-import { AdventureMap } from '@/components/game/AdventureMap';
 import { CityModal } from '@/components/game/CityModal';
 import { AchievementPopup } from '@/components/game/AchievementPopup';
 import { BadgeCollection } from '@/components/game/BadgeCollection';
@@ -13,6 +13,21 @@ import { DailyJournal } from '@/components/game/DailyJournal';
 import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore } from '@/lib/game-state';
+
+const AdventureMap = dynamic(
+  () => import('@/components/game/AdventureMap').then((mod) => mod.AdventureMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="absolute inset-0 bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl animate-spin mb-4">🌍</div>
+          <p className="text-muted-foreground font-mono text-sm">Loading adventure map...</p>
+        </div>
+      </div>
+    ),
+  }
+);
 import { soundManager } from '@/lib/sounds';
 
 type ActiveGame = 'packing' | 'memory' | null;
