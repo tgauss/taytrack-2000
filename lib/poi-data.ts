@@ -9,6 +9,12 @@ export interface POI {
   lngLat: [number, number];
   funFact: string;
   color: string;
+  // Rich content for landmark explorer
+  imageUrl?: string; // Wikimedia Commons or public domain image
+  youtubeId?: string; // YouTube video ID for kid-friendly video
+  historyLesson: string; // Longer educational text for the explorer
+  didYouKnow?: string; // Extra "did you know?" fact
+  zoomLevel?: number; // Custom zoom for this POI (default: 16.5)
 }
 
 export interface DriveWaypoint {
@@ -35,8 +41,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Center of the Universe',
       emoji: '🔮',
       lngLat: [-95.9927, 36.1565],
-      funFact: 'Stand in the magic circle and SHOUT — your voice echoes back super loud but people next to you hear nothing! Nobody knows why!',
+      funFact: 'Stand in the magic circle and SHOUT — your voice echoes back super loud but people next to you hear nothing!',
       color: '#f97316',
+      historyLesson: 'This is one of the weirdest places in America! It\'s a small concrete circle on a pedestrian bridge in downtown Tulsa. When you stand in the center and make ANY noise — talk, clap, stomp — your voice echoes back to you MUCH louder than you made it. But people standing just a few feet away hear almost nothing! Scientists think the surrounding walls bounce the sound waves back to the center like a mirror bounces light. But nobody is 100% sure why it works! It\'s free to visit and open all day and night.',
+      didYouKnow: 'The circle is only about 8 feet wide — the size of a small trampoline! Step one foot outside and the magic stops.',
     },
     {
       id: 'tulsa-golden-driller',
@@ -44,8 +52,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Golden Driller',
       emoji: '🗽',
       lngLat: [-95.9214, 36.1289],
-      funFact: 'This 76-foot golden statue has shoe size 393! He weighs 43,500 pounds and his hand rests on a REAL oil tower!',
+      funFact: 'This 76-foot golden statue has shoe size 393! He weighs 43,500 pounds!',
       color: '#f97316',
+      historyLesson: 'The Golden Driller is the 7th tallest statue in all of America! He was built in 1952 to celebrate Tulsa\'s oil history. His right hand rests on a REAL oil derrick that was brought from a real oil field! He\'s 76 feet tall (as tall as 7 giraffes stacked up), weighs 43,500 pounds, and wears a hard hat size 112. His belt is 48 feet around — that\'s as long as a school bus! In 1979, Oklahoma made him the official state monument.',
+      didYouKnow: 'His shoe size is 393DDD. That is NOT a real shoe size! Nobody makes shoes that big!',
     },
     {
       id: 'tulsa-blue-whale',
@@ -53,8 +63,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Blue Whale of Catoosa',
       emoji: '🐋',
       lngLat: [-95.7634, 36.2398],
-      funFact: 'A man spent 2 years building this 80-foot whale out of cement as a surprise for his wife! Kids used to slide down it into a pond!',
+      funFact: 'A man spent 2 years building this 80-foot whale out of cement as a surprise for his wife!',
       color: '#60a5fa',
+      historyLesson: 'This giant blue whale was built by a man named Hugh Davis as a surprise anniversary gift for his wife Zelta in 1972! She loved collecting whale figurines, so he spent two years welding a frame and covering it with hand-mixed cement, one bucket at a time. The whale is 80 feet long and 20 feet tall! The mouth used to have a slide that shot kids into the swimming pond, and the tail had a diving platform. It\'s one of the most famous landmarks on all of Route 66!',
+      didYouKnow: 'Hugh Davis was actually a zoologist (a scientist who studies animals)! He built the whale for their 34th wedding anniversary.',
     },
     {
       id: 'tulsa-gathering-place',
@@ -62,8 +74,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Gathering Place',
       emoji: '🎢',
       lngLat: [-95.9767, 36.1348],
-      funFact: 'The coolest FREE playground ever! It has 46-foot towers, an elephant slide, sky bridges, and got 3 million visitors in its first year!',
+      funFact: 'The coolest FREE playground ever! 46-foot towers, an elephant slide, and sky bridges!',
       color: '#4ade80',
+      historyLesson: 'The Gathering Place cost 465 MILLION dollars to build — the largest private gift to a community park in all of American history! It opened in 2018 and expected 1 million visitors per year... but 3 million people came in the FIRST year! The playground has towers 46 feet tall, a giant elephant with a slide in its trunk, net climbing structures 20 feet in the air, a fairy forest for little kids, water play areas, and a 60-foot suspension bridge. TIME Magazine named it one of the World\'s 100 Greatest Places!',
+      didYouKnow: 'The park is 66.5 acres — that\'s as big as 50 football fields! And everything is completely FREE!',
     },
     {
       id: 'tulsa-route66',
@@ -71,8 +85,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Route 66 Sign',
       emoji: '🛣️',
       lngLat: [-95.9846, 36.1493],
-      funFact: 'Route 66, the most famous road in America, goes right through Tulsa! The character Sally from Cars is based on a real lady from Route 66!',
+      funFact: 'Route 66 goes right through Tulsa! Sally from Cars is based on a real Oklahoma lady!',
       color: '#eab308',
+      historyLesson: 'Route 66 is called "The Mother Road" and it\'s the most famous road in America! It was created in 1926 and goes from Chicago, Illinois all the way to Los Angeles, California — that\'s 2,448 miles! Route 66 runs 26 miles through Tulsa with special historical markers you can find. The coolest part? The character Sally in the Pixar movie Cars was inspired by a REAL woman named Dawn Welch who runs the Rock Cafe on Route 66 in Stroud, Oklahoma! There\'s also a giant 66-foot neon soda bottle sign nearby (66 feet for Route 66!).',
+      didYouKnow: 'Near the old Route 66 bridge in Tulsa, there are replica neon signs from old 1950s motels that light up at night. It looks like going back in time!',
     },
   ],
   lincoln: [
@@ -82,8 +98,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'State Capitol & The Sower',
       emoji: '🏛️',
       lngLat: [-96.6997, 40.8088],
-      funFact: 'The 400-foot tower has a gold farmer on top called The Sower! He weighs as much as 2 elephants and doubles as a lightning rod!',
+      funFact: 'The 400-foot tower has a golden farmer on top who weighs as much as 2 elephants!',
       color: '#eab308',
+      historyLesson: 'Nebraska\'s State Capitol was the FIRST state capitol in America to have a tower! The architect said "Nebraska is flat, so its capitol should have altitude!" The tower is 400 feet tall and you can see it from 20 miles away on the flat plains. On top sits "The Sower," a bronze statue of a barefoot man scattering seeds. He\'s 19.5 feet tall and weighs 9.5 tons (that\'s as heavy as 2 elephants!). He also works as the building\'s LIGHTNING ROD! The dome below him is covered in gold tiles. You can ride an elevator up to the 14th floor and look out over the whole city!',
+      didYouKnow: 'When The Sower was raised to the top on April 24, 1930, thousands of people gathered to watch. The building took 10 years to build and cost $9.8 million (that would be about $180 million today!).',
     },
     {
       id: 'lincoln-stadium',
@@ -91,8 +109,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Memorial Stadium',
       emoji: '🏈',
       lngLat: [-96.7032, 40.8206],
-      funFact: 'Every single game has been sold out since 1962 — over 400 in a row! 92,003 people once came to watch VOLLEYBALL here!',
+      funFact: 'Every game sold out since 1962 — over 400 in a row! World record!',
       color: '#dc2626',
+      historyLesson: 'Memorial Stadium holds 85,458 people and has been sold out for EVERY SINGLE GAME since 1962 — that\'s over 400 games in a row, an NCAA record! On game days, it becomes the 3rd largest "city" in all of Nebraska! But here\'s the wildest thing: on August 30, 2023, 92,003 people packed this FOOTBALL stadium to watch... VOLLEYBALL! They put a volleyball court in the middle and it set the WORLD RECORD for the largest attendance at a women\'s sporting event EVER! The stadium opened in 1923 — it\'s over 100 years old!',
+      didYouKnow: 'The original stadium only held 31,080 people and cost $482,939 to build in 1923. Kids\' tickets for Volleyball Day were only $5!',
     },
     {
       id: 'lincoln-morrill',
@@ -100,8 +120,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Morrill Hall (Archie!)',
       emoji: '🦣',
       lngLat: [-96.7004, 40.8141],
-      funFact: 'Archie the mammoth is 14 feet tall! He was discovered when CHICKENS pecked his bones out of the ground in 1921!',
+      funFact: 'Archie the mammoth is 14 feet tall — discovered by CHICKENS!',
       color: '#92400e',
+      historyLesson: 'Morrill Hall has one of the most amazing fossil collections in America — over 1 MILLION fossils! The star is "Archie," the world\'s largest fully mounted Columbian mammoth skeleton. Archie is 14 feet tall — taller than any ceiling in your house! Here\'s the funny part: in 1921, CHICKENS pecking at the ground on a ranch uncovered his bones! The museum has a whole "Elephant Hall" showing how elephants changed over millions of years. There\'s also a life-size mammoth sculpture named Fred outside the entrance!',
+      didYouKnow: 'Columbian mammoths lived in North America during the Ice Age and went extinct about 11,000 years ago. They were even BIGGER than woolly mammoths!',
     },
     {
       id: 'lincoln-haymarket',
@@ -109,8 +131,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Haymarket District',
       emoji: '🍦',
       lngLat: [-96.7143, 40.8169],
-      funFact: 'Old brick streets with ice cream shops, a farmers market, and Gallery Alley that lights up with neon at night! Dad\'s hotel is right here!',
+      funFact: 'Old brick streets with ice cream shops and neon-lit alleys! Dad\'s hotel is right here!',
       color: '#f97316',
+      historyLesson: 'The Haymarket is Lincoln\'s coolest neighborhood — it used to be an old warehouse district with brick streets! Now it has ice cream shops like Ivanna Cone and 402 Creamery, a Saturday farmers market with live music, and Gallery Alley that lights up with neon at night. The Lincoln Saltdogs (named after the salty ground Lincoln was built on!) play baseball at Haymarket Park right here. Dad\'s hotel, the Hyatt Place, is right in the middle of it all!',
+      didYouKnow: 'The Saltdogs set a record of 8,325 fans at one game! Their mascot is a salt-covered hot dog!',
     },
     {
       id: 'lincoln-sunken-gardens',
@@ -118,8 +142,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Sunken Gardens',
       emoji: '🌸',
       lngLat: [-96.6701, 40.8247],
-      funFact: 'This used to be a garbage dump! Now it\'s one of the 300 best gardens in America with 30,000 flowers! And it\'s FREE!',
+      funFact: 'This used to be a garbage dump! Now it has 30,000 flowers!',
       color: '#ec4899',
+      historyLesson: 'Here\'s an amazing transformation: this beautiful garden used to be a GARBAGE DUMP! During the Great Depression in 1930, when lots of people didn\'t have jobs, the city hired unemployed workers to turn the dump into a garden. They were paid just $6.40 per WEEK! They built stone walls, waterfalls, and fountains. Today it has over 30,000 different flowers and is the ONLY Nebraska garden listed in National Geographic\'s "300 Best Gardens to Visit." And the best part? It\'s completely FREE!',
+      didYouKnow: 'The workers who built it originally called it the "Rock Garden." In 2003, the city spent $1.7 million to fix it up and make it even more beautiful!',
     },
   ],
   roca: [
@@ -129,8 +155,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Roca Berry Farm',
       emoji: '🎃',
       lngLat: [-96.6570, 40.6380],
-      funFact: 'The oldest pumpkin patch in the area! They have goats, bunnies, zip lines, and a giant pillow you can JUMP on!',
+      funFact: 'Goats, bunnies, zip lines, and a giant pillow you can JUMP on!',
       color: '#f97316',
+      historyLesson: 'Roca Berry Farm is the oldest and largest pumpkin patch in all of Lancaster County! The Schaefer family has been running it since 1980. It has a giant pumpkin patch, hay rack rides, a petting zoo with goats, pigs, a cow, and bunnies, zip lines, a jumping pillow (like a giant bouncy house on the ground!), balloon animals, and 9 different fun barns to explore. In the fall, they have a corn maze too!',
+      didYouKnow: 'Roca is so tiny (201 people!) that the berry farm might be the most famous thing in town!',
     },
     {
       id: 'roca-warehouse',
@@ -138,8 +166,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Rare Goods Warehouse',
       emoji: '📦',
       lngLat: [-96.6653, 40.6481],
-      funFact: 'This is where Dad is packing 180 boxes! Only 201 people live in this tiny town but 379 customers are getting their orders!',
+      funFact: 'Dad is packing 180 boxes! 379 customers total!',
       color: '#a855f7',
+      historyLesson: 'This is where the Rare Goods magic happens! Dad and his business partner are here packing boxes full of special items. There are 180 boxes to ship to people\'s homes AND about 200 people are driving here in person to pick up their orders. That\'s 379 customers total! The warehouse is in tiny Roca, Nebraska where only 201 people live. Imagine — more customers are coming to this warehouse than there are people in the whole town!',
+      didYouKnow: 'The biggest day is Friday April 17 — they\'ll be packing and handing out boxes for TEN HOURS straight from 10am to 8pm!',
     },
   ],
   omaha: [
@@ -149,8 +179,11 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Henry Doorly Zoo',
       emoji: '🦁',
       lngLat: [-95.9285, 41.2260],
-      funFact: 'The BEST ZOO in the world! It has a desert in a giant glass dome, a shark tunnel, an indoor jungle with a 50-foot waterfall, and penguins!',
+      funFact: 'The BEST ZOO in the world with a desert dome, shark tunnel, and indoor jungle!',
       color: '#4ade80',
+      historyLesson: 'TripAdvisor ranked this the #1 BEST ZOO in the whole world! It covers 160 acres with 17,000 animals. The Desert Dome is the world\'s largest glazed geodesic dome — 230 feet wide and 137 feet tall — with THREE real deserts recreated inside! Below it is the Kingdoms of the Night, the world\'s largest nocturnal exhibit where it\'s always dark so you can see animals that only come out at night. The Lied Jungle is an indoor rainforest 80 feet tall with a 50-foot waterfall. And the aquarium has a 70-foot shark tunnel — sharks, stingrays, and sea turtles swim RIGHT OVER YOUR HEAD!',
+      didYouKnow: 'The zoo also has king, gentoo, and rockhopper PENGUINS in a snowy Antarctic habitat. And you can watch caterpillars turn into butterflies in the Chrysalis Hatching Room!',
+      zoomLevel: 15,
     },
     {
       id: 'omaha-bridge',
@@ -158,8 +191,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Bob Kerrey Bridge',
       emoji: '🌉',
       lngLat: [-95.9225, 41.2586],
-      funFact: 'Stand in TWO STATES at the same time! One foot in Nebraska, one foot in Iowa! The bridge is more than half a mile long!',
+      funFact: 'Stand in TWO STATES at the same time! One foot in Nebraska, one in Iowa!',
       color: '#60a5fa',
+      historyLesson: 'This amazing bridge is 3,000 feet long — that\'s more than half a mile! It crosses the Missouri River and connects Nebraska to Iowa. The coolest thing? There\'s a state line marker on the bridge where you can put one foot in Nebraska and one foot in Iowa at the SAME TIME! The two towers reach 200 feet into the sky. The bridge even has its own social media personality called "Bob the Bridge" — it posts funny videos and tweets! In 2025, a little expansion bridge opened called "Baby Bob"!',
+      didYouKnow: 'The Missouri River below is the LONGEST river in the entire United States at 2,341 miles! It starts in Montana and joins the Mississippi River in Missouri.',
     },
     {
       id: 'omaha-durham',
@@ -167,8 +202,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Durham Museum',
       emoji: '🚂',
       lngLat: [-95.9370, 41.2522],
-      funFact: 'A museum inside a REAL 1930s train station! 10,000 people used to catch trains here every day! It has an old-time soda fountain!',
+      funFact: 'A museum inside a REAL 1930s train station! It has an old-time soda fountain!',
       color: '#eab308',
+      historyLesson: 'This museum is inside Omaha\'s Union Station, a gorgeous building that opened in 1931. At its busiest, 10,000 passengers caught trains here EVERY DAY and 64 trains passed through! The Great Hall is 160 feet long with a 60-foot ceiling covered in gold and silver. You can walk through REAL restored train cars and see what 1940s storefronts looked like. The best part for kids? There\'s an authentic old-fashioned soda fountain where you can sit at the counter and get a phosphate or malt — just like in an old movie!',
+      didYouKnow: 'The last passenger train left Union Station in 1971. But the building was so beautiful they turned it into a museum instead of tearing it down!',
     },
     {
       id: 'omaha-old-market',
@@ -176,8 +213,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Old Market',
       emoji: '🍬',
       lngLat: [-95.9312, 41.2558],
-      funFact: 'Cobblestone streets with a vintage candy store, horse-drawn carriages, and Ted & Wally\'s famous ice cream!',
+      funFact: 'Cobblestone streets with a vintage candy store and horse-drawn carriages!',
       color: '#f97316',
+      historyLesson: 'The Old Market is Omaha\'s historic neighborhood with real cobblestone streets and old brick buildings. It has Hollywood Candy — a huge vintage candy store kids LOVE — Ted & Wally\'s famous scratch-made ice cream, horse-drawn carriage rides, street performers, and a hidden indoor alley called the Old Market Passageway full of tiny shops. There\'s even a year-round Christmas shop called Tannenbaum!',
+      didYouKnow: 'There\'s a Garden of the Zodiac where kids can find their zodiac sign hidden in the decorations!',
     },
     {
       id: 'omaha-bigboy',
@@ -185,8 +224,10 @@ export const cityPOIs: Record<string, POI[]> = {
       name: 'Big Boy Train',
       emoji: '🚂',
       lngLat: [-95.9214, 41.2410],
-      funFact: 'The BIGGEST steam train in the world! It weighs 1.2 MILLION pounds — that\'s heavier than 100 elephants!',
+      funFact: 'The BIGGEST steam train in the world — heavier than 100 elephants!',
       color: '#6b7280',
+      historyLesson: 'At Kenefick Park, you can see Big Boy No. 4023 — the LARGEST steam locomotive in the world! It weighs 1.2 MILLION pounds (that\'s 600 tons — heavier than 100 elephants!). Next to it is the Centennial No. 6900, the largest and most powerful diesel-electric locomotive ever built. These massive machines helped connect America by carrying people and goods across the country. The Union Pacific Railroad started right here in Omaha in 1863, building the first railroad all the way across America!',
+      didYouKnow: 'You can see Big Boy from the highway — it sits on a bluff above I-80. It\'s completely FREE to visit and walk around!',
     },
   ],
 };

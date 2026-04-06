@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, RotateCcw, Home, Gamepad2, BookOpen } from 'lucide-react';
@@ -10,9 +10,11 @@ import { AchievementPopup } from '@/components/game/AchievementPopup';
 import { BadgeCollection } from '@/components/game/BadgeCollection';
 import { SoundToggle } from '@/components/game/SoundToggle';
 import { DailyJournal } from '@/components/game/DailyJournal';
+import { LandmarkExplorer } from '@/components/game/LandmarkExplorer';
 import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore } from '@/lib/game-state';
+import type { POI } from '@/lib/poi-data';
 
 const AdventureMap = dynamic(
   () => import('@/components/game/AdventureMap').then((mod) => mod.AdventureMap),
@@ -34,12 +36,23 @@ type ActiveGame = 'packing' | 'memory' | null;
 
 export default function GamePage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
   const [showBadges, setShowBadges] = useState(false);
   const [showGames, setShowGames] = useState(false);
   const [showJournal, setShowJournal] = useState(false);
   const [activeGame, setActiveGame] = useState<ActiveGame>(null);
   const [isLandscape, setIsLandscape] = useState(true);
+  const mapControlsRef = useRef<{ flyBackToCity: () => void } | null>(null);
   const { resetGame, earnedBadges } = useGameStore();
+
+  const handlePOITap = useCallback((poi: POI) => {
+    setSelectedPOI(poi);
+  }, []);
+
+  const handleClosePOI = useCallback(() => {
+    setSelectedPOI(null);
+    mapControlsRef.current?.flyBackToCity();
+  }, []);
 
   // Check orientation
   useEffect(() => {
@@ -73,7 +86,11 @@ export default function GamePage() {
     return (
       <div className="fixed inset-0 bg-background">
         {/* Still show the map underneath */}
-        <AdventureMap onCityTap={handleCityTap} />
+        <AdventureMap
+          onCityTap={handleCityTap}
+          onPOITap={handlePOITap}
+          onMapReady={(controls) => { mapControlsRef.current = controls; }}
+        />
 
         {/* Overlay with suggestion */}
         <motion.div
@@ -114,7 +131,11 @@ export default function GamePage() {
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
       {/* Main game area */}
-      <AdventureMap onCityTap={handleCityTap} />
+      <AdventureMap
+          onCityTap={handleCityTap}
+          onPOITap={handlePOITap}
+          onMapReady={(controls) => { mapControlsRef.current = controls; }}
+        />
 
       {/* Top bar controls */}
       <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between pointer-events-none">
@@ -299,6 +320,9 @@ export default function GamePage() {
           <MemoryGame onClose={() => setActiveGame(null)} />
         )}
       </AnimatePresence>
+
+      {/* Landmark Explorer */}
+      <LandmarkExplorer poi={selectedPOI} onClose={handleClosePOI} />
 
       {/* Achievement Popup - always on top */}
       <AchievementPopup />

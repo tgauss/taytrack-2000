@@ -44,9 +44,11 @@ type ExplorationPhase = 'idle' | 'traveling' | 'arrived' | 'exploring' | 'ready'
 
 interface AdventureMapProps {
   onCityTap: (cityId: string) => void;
+  onPOITap?: (poi: POI) => void;
+  onMapReady?: (controls: { flyBackToCity: () => void }) => void;
 }
 
-export function AdventureMap({ onCityTap }: AdventureMapProps) {
+export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
@@ -104,56 +106,70 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
       `;
       el.innerHTML = `
         <div style="
-          width: 40px; height: 40px;
-          background: rgba(0,0,0,0.7);
-          border: 2px solid ${poi.color};
-          border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 22px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-          transition: transform 0.2s;
-        ">${poi.emoji}</div>
-      `;
-
-      // Create popup
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        closeButton: true,
-        closeOnClick: false,
-        maxWidth: '280px',
-        className: 'poi-popup',
-      }).setHTML(`
-        <div style="
-          font-family: 'Space Grotesk', sans-serif;
-          padding: 4px;
+          display: flex; flex-direction: column; align-items: center; gap: 2px;
         ">
-          <div style="font-size: 28px; text-align: center; margin-bottom: 6px;">${poi.emoji}</div>
-          <div style="font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 8px; color: ${poi.color};">${poi.name}</div>
-          <div style="font-size: 14px; line-height: 1.4; color: #d1d5db;">${poi.funFact}</div>
+          <div class="poi-icon" style="
+            width: 48px; height: 48px;
+            background: rgba(0,0,0,0.8);
+            border: 3px solid ${poi.color};
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 0 12px ${poi.color}66, 0 2px 8px rgba(0,0,0,0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+          ">${poi.emoji}</div>
+          <div style="
+            background: rgba(0,0,0,0.85);
+            color: ${poi.color};
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+            border: 1px solid ${poi.color}44;
+          ">${poi.name}</div>
         </div>
-      `);
+      `;
 
       el.addEventListener('click', () => {
         soundManager.tap();
+        stopOrbit();
+        // Fly camera to this POI
+        const zoomTo = poi.zoomLevel || 16.5;
+        map.current?.flyTo({
+          center: poi.lngLat,
+          zoom: zoomTo,
+          pitch: 65,
+          bearing: Math.random() * 40 - 20,
+          duration: 1500,
+          curve: 1.2,
+        });
+        // Notify parent to show the landmark explorer
+        onPOITap?.(poi);
       });
 
       el.addEventListener('mouseenter', () => {
-        const inner = el.querySelector('div') as HTMLElement;
-        if (inner) inner.style.transform = 'scale(1.2)';
+        const inner = el.querySelector('.poi-icon') as HTMLElement;
+        if (inner) {
+          inner.style.transform = 'scale(1.25)';
+          inner.style.boxShadow = `0 0 20px ${poi.color}aa, 0 4px 12px rgba(0,0,0,0.5)`;
+        }
       });
       el.addEventListener('mouseleave', () => {
-        const inner = el.querySelector('div') as HTMLElement;
-        if (inner) inner.style.transform = 'scale(1)';
+        const inner = el.querySelector('.poi-icon') as HTMLElement;
+        if (inner) {
+          inner.style.transform = 'scale(1)';
+          inner.style.boxShadow = `0 0 12px ${poi.color}66, 0 2px 8px rgba(0,0,0,0.5)`;
+        }
       });
 
       const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat(poi.lngLat)
-        .setPopup(popup)
         .addTo(map.current!);
 
       poiMarkersRef.current.push(marker);
     });
-  }, [removePOIMarkers]);
+  }, [removePOIMarkers, onPOITap, stopOrbit]);
 
   const addDriveWaypointMarkers = useCallback((from: string, to: string) => {
     if (!map.current) return;
@@ -495,6 +511,23 @@ export function AdventureMap({ onCityTap }: AdventureMapProps) {
       // Show POIs for starting location
       const startCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
       addPOIMarkers(startCityId);
+
+      // Expose flyBackToCity to parent
+      onMapReady?.({
+        flyBackToCity: () => {
+          const locKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
+          const loc = LOCATIONS[locKey];
+          if (loc && map.current) {
+            map.current.flyTo({
+              center: [loc.lng, loc.lat],
+              zoom: ARRIVAL_ZOOM,
+              pitch: ARRIVAL_PITCH,
+              bearing: 0,
+              duration: 1500,
+            });
+          }
+        },
+      });
     });
 
     return () => {
