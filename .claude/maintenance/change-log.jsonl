@@ -1,0 +1,27 @@
+
+{"ts":"2026-04-06T21:09:22Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/trip-data.ts","tool":"Write"}
+{"ts":"2026-04-06T21:09:37Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/game-state.ts","tool":"Write"}
+{"ts":"2026-04-06T21:09:53Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/achievements.ts","tool":"Write"}
+{"ts":"2026-04-06T21:11:19Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/fun-facts.ts","tool":"Write"}
+{"ts":"2026-04-06T21:11:44Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/daily-journal.ts","tool":"Write"}
+{"ts":"2026-04-06T21:13:17Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/AdventureMap.tsx","tool":"Write"}
+{"ts":"2026-04-06T21:13:24Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/SleepsCounter.tsx","tool":"Write"}
+{"ts":"2026-04-06T21:14:15Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/CityModal.tsx","tool":"Write"}
+{"ts":"2026-04-06T21:14:27Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/ProgressCaterpillar.tsx","tool":"Write"}
+{"ts":"2026-04-06T21:15:11Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/games/PackingGame.tsx","tool":"Write"}
+{"ts":"2026-04-06T21:15:49Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/games/MemoryGame.tsx","tool":"Write"}
+{"ts":"2026-04-06T21:16:14Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/BadgeCollection.tsx","tool":"Write"}
+{"ts":"2026-04-06T21:16:40Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/DailyJournal.tsx","tool":"Write"}
+{"ts":"2026-04-06T21:17:16Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/game/page.tsx","tool":"Write"}
+{"ts":"2026-04-06T21:17:22Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/page.tsx","tool":"Edit"}
+{"ts":"2026-04-06T21:17:37Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/trip-map.tsx","tool":"Edit"}
+{"ts":"2026-04-06T21:17:48Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/trip-globe-3d.tsx","tool":"Edit"}
+{"ts":"2026-04-06T21:17:52Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/trip-globe-3d.tsx","tool":"Edit"}
+{"ts":"2026-04-06T21:17:58Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/trip-globe-3d.tsx","tool":"Edit"}
+{"ts":"2026-04-06T21:18:13Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/quick-info.tsx","tool":"Edit"}
+{"ts":"2026-04-06T21:18:31Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/layout.tsx","tool":"Edit"}
+{"ts":"2026-04-06T21:18:39Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/trip-globe-3d.tsx","tool":"Edit"}
+{"ts":"2026-04-06T21:18:45Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/daily-journal.ts","tool":"Edit"}
+{"ts":"2026-04-06T21:35:43Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/fun-facts.ts","tool":"Write"}
+{"ts":"2026-04-06T21:36:26Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/daily-journal.ts","tool":"Write"}
+{"ts":"2026-04-06T21:36:37Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/DailyJournal.tsx","tool":"Edit"}

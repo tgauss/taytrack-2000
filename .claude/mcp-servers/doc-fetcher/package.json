@@ -1,0 +1,35 @@
+{
+  "name": "@carbon-ui/doc-fetcher-mcp",
+  "version": "1.0.0",
+  "description": "Custom MCP server for fetching and caching external documentation with progressive disclosure",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "documentation",
+    "fetcher",
+    "progressive-disclosure"
+  ],
+  "author": "Carbon UI Team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "node-fetch": "^3.3.2",
+    "turndown": "^7.2.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/turndown": "^5.0.4",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

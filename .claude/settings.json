@@ -1,0 +1,124 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(pwd)",
+      "Bash(echo:*)",
+      "Bash(cd:*)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(test:*)",
+      "Bash(which:*)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(git status)",
+      "Bash(git branch)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run typecheck*)",
+      "Bash(npm run prettier)",
+      "Bash(npm test)",
+      "Bash(*)",
+      "FileEdit(*)",
+      "FileView(*)",
+      "Git(*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(sudo *)",
+      "Bash(npm publish *)",
+      "Bash(chmod 777 *)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f .claude/hooks/validate-bash-command.sh && .claude/hooks/validate-bash-command.sh || true"
+          },
+          {
+            "type": "command",
+            "command": "test -f .claude/hooks/protect-git-operations.sh && .claude/hooks/protect-git-operations.sh || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f .claude/hooks/prevent-credential-exposure.sh && .claude/hooks/prevent-credential-exposure.sh || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f .claude/hooks/protect-sensitive-files.sh && .claude/hooks/protect-sensitive-files.sh || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f .claude/hooks/protect-sensitive-files.sh && .claude/hooks/protect-sensitive-files.sh || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f .claude/hooks/track-file-changes.sh && .claude/hooks/track-file-changes.sh || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f .claude/hooks/track-file-changes.sh && .claude/hooks/track-file-changes.sh || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f .claude/hooks/detect-maintenance-events.sh && .claude/hooks/detect-maintenance-events.sh || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f .claude/hooks/session-end-maintenance.sh && .claude/hooks/session-end-maintenance.sh || true"
+          }
+        ]
+      }
+    ]
+  }
+}

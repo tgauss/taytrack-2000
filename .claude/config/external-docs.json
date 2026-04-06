@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "mode": "prompt",
+  "trackedPackages": [],
+  "retention": {
+    "maxVersions": 2,
+    "cleanupStrategy": "keep-latest-and-previous",
+    "minAgeBeforeCleanup": "7 days"
+  },
+  "updateTriggers": {
+    "onPackageJsonChange": true,
+    "onKnowledgeMaintainerRun": true,
+    "manualCommand": true
+  },
+  "filtering": {
+    "maxTopicSize": "100KB",
+    "removeElements": ["nav", "footer", "ads", "comments", "related-articles"],
+    "maxExamplesPerSection": 3
+  }
+}
