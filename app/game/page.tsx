@@ -3,12 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, RotateCcw, Home, Gamepad2, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { CityModal } from '@/components/game/CityModal';
 import { AchievementPopup } from '@/components/game/AchievementPopup';
 import { BadgeCollection } from '@/components/game/BadgeCollection';
-import { SoundToggle } from '@/components/game/SoundToggle';
 import { DailyJournal } from '@/components/game/DailyJournal';
 import { LandmarkExplorer } from '@/components/game/LandmarkExplorer';
 import { CityExplorer } from '@/components/game/CityExplorer';
@@ -16,6 +14,7 @@ import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
+import { speakText, stopElevenLabsSpeech } from '@/lib/voice';
 import type { POI } from '@/lib/poi-data';
 
 const AdventureMap = dynamic(
@@ -34,22 +33,40 @@ const AdventureMap = dynamic(
 );
 
 type ActiveGame = 'packing' | 'memory' | null;
+type MenuPanel = 'none' | 'menu' | 'badges' | 'journal' | 'games';
+
+// City arrival narration lines (for ElevenLabs)
+const ARRIVAL_NARRATIONS: Record<string, string> = {
+  seattle: "We made it to Seattle! Dad's plane is stopping here for a quick break. Did you know Seattle has a tower that looks like a spaceship?",
+  tulsa: "Welcome to Tulsa, Oklahoma! Dad is here for his big conference. This city has a giant golden man statue as tall as seven giraffes!",
+  lincoln: "We're in Lincoln, Nebraska! Dad drove all the way here through Kansas. Nebraska has more cows than people! Moo!",
+  roca: "We're in tiny Roca! Only two hundred and one people live here. Dad is going to pack SO many boxes!",
+  omaha: "Welcome to Omaha! This city has the best zoo in the whole world! Dad is about to fly home to us!",
+  'vancouver-return': "DAD IS HOME! He made it back! Eight days of adventures and he's finally here for hugs!",
+};
 
 export default function GamePage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
-  const [showBadges, setShowBadges] = useState(false);
-  const [showGames, setShowGames] = useState(false);
-  const [showJournal, setShowJournal] = useState(false);
+  const [menuPanel, setMenuPanel] = useState<MenuPanel>('none');
   const [activeGame, setActiveGame] = useState<ActiveGame>(null);
+  const [showIntro, setShowIntro] = useState(false);
   const [isLandscape, setIsLandscape] = useState(true);
   const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void } | null>(null);
-  const { resetGame, earnedBadges, currentLocation } = useGameStore();
+  const { resetGame, earnedBadges, currentLocation, isMuted } = useGameStore();
   const exploreCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
+  const hasStarted = useRef(false);
+
+  // Show intro on first visit
+  useEffect(() => {
+    if (currentLocation === 'vancouver' && !hasStarted.current) {
+      hasStarted.current = true;
+      setShowIntro(true);
+    }
+  }, [currentLocation]);
 
   const handlePOITap = useCallback((poi: POI) => {
     setSelectedPOI(poi);
-    // Fly the map to the POI location
     mapControlsRef.current?.flyToPOI?.(poi);
   }, []);
 
@@ -58,75 +75,54 @@ export default function GamePage() {
     mapControlsRef.current?.flyBackToCity();
   }, []);
 
-  // Check orientation
+  // Proactive narration when arriving at a city
   useEffect(() => {
-    const checkOrientation = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    };
+    if (currentLocation === 'vancouver' || isMuted) return;
+    const narration = ARRIVAL_NARRATIONS[currentLocation];
+    if (narration) {
+      const timer = setTimeout(() => {
+        speakText(narration, 'excited');
+      }, 3500); // Wait for arrival animation to finish
+      return () => clearTimeout(timer);
+    }
+  }, [currentLocation, isMuted]);
 
+  useEffect(() => {
+    const checkOrientation = () => setIsLandscape(window.innerWidth > window.innerHeight);
     checkOrientation();
     window.addEventListener('resize', checkOrientation);
     return () => window.removeEventListener('resize', checkOrientation);
   }, []);
 
-  const handleCityTap = (cityId: string) => {
-    setSelectedCity(cityId);
-  };
-
-  const handlePlayGame = (gameId: string) => {
-    setSelectedCity(null);
-    setActiveGame(gameId as ActiveGame);
-  };
+  const handleCityTap = (cityId: string) => setSelectedCity(cityId);
+  const handlePlayGame = (gameId: string) => { setSelectedCity(null); setActiveGame(gameId as ActiveGame); };
 
   const handleReset = () => {
     soundManager.tap();
-    if (confirm('Start a new adventure? This will reset your progress!')) {
-      resetGame();
+    stopElevenLabsSpeech();
+    resetGame();
+    setShowIntro(true);
+  };
+
+  const dismissIntro = () => {
+    setShowIntro(false);
+    soundManager.fanfare();
+    if (!isMuted) {
+      speakText("Let's go! Dad is heading to the airport. Tap Blast Off to start the adventure!", 'excited');
     }
   };
 
-  // Portrait mode - gentle suggestion instead of blocking
+  // Portrait mode
   if (!isLandscape) {
     return (
-      <div className="fixed inset-0 bg-background">
-        {/* Still show the map underneath */}
-        <AdventureMap
-          onCityTap={handleCityTap}
-          onPOITap={handlePOITap}
-          onMapReady={(controls) => { mapControlsRef.current = controls; }}
-        />
-
-        {/* Overlay with suggestion */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/60 flex items-center justify-center p-8 text-center z-50"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="max-w-sm bg-card rounded-3xl p-8"
-          >
-            <motion.div
-              animate={{ rotate: [0, 90, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-              className="text-6xl mb-6"
-            >
-              📱
-            </motion.div>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              Turn Your Device!
-            </h2>
-            <p className="text-lg text-muted-foreground mb-6">
-              The adventure map works best sideways!
-            </p>
-            <button
-              onClick={() => setIsLandscape(true)}
-              className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold text-lg touch-manipulation"
-            >
-              Continue Anyway
-            </button>
-          </motion.div>
+      <div className="fixed inset-0 bg-background flex items-center justify-center p-8 text-center">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-sm">
+          <motion.div animate={{ rotate: [0, 90, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }} className="text-7xl mb-6">📱</motion.div>
+          <h2 className="text-3xl font-bold text-foreground mb-4">Turn Me Sideways!</h2>
+          <p className="text-xl text-muted-foreground mb-6">The adventure works best this way!</p>
+          <button onClick={() => setIsLandscape(true)} className="w-full py-5 bg-primary text-primary-foreground rounded-2xl font-bold text-xl touch-manipulation">
+            OK! 👍
+          </button>
         </motion.div>
       </div>
     );
@@ -134,127 +130,175 @@ export default function GamePage() {
 
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
-      {/* Main game area */}
+      {/* Map */}
       <AdventureMap
-          onCityTap={handleCityTap}
-          onPOITap={handlePOITap}
-          onMapReady={(controls) => { mapControlsRef.current = controls; }}
-        />
+        onCityTap={handleCityTap}
+        onPOITap={handlePOITap}
+        onMapReady={(controls) => { mapControlsRef.current = controls; }}
+      />
 
-      {/* Top bar controls */}
-      <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between pointer-events-none">
-        {/* Left side - Home & Reset */}
-        <div className="flex gap-2 pointer-events-auto">
-          <Link href="/">
+      {/* ===== INTRO SCREEN ===== */}
+      <AnimatePresence>
+        {showIntro && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900"
+          >
             <motion.div
-              className="w-14 h-14 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', damping: 15 }}
+              className="text-center px-8 max-w-lg"
             >
-              <Home className="w-6 h-6 text-foreground" />
+              <motion.div
+                animate={{ y: [0, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-8xl mb-6"
+              >
+                ✈️
+              </motion.div>
+              <h1 className="text-4xl font-bold text-white mb-4">
+                Dad&apos;s Big Adventure!
+              </h1>
+              <p className="text-xl text-white/80 mb-3 leading-relaxed">
+                Dad is going on an 8-day trip far away! He&apos;ll fly on airplanes, drive through Kansas, and pack hundreds of boxes!
+              </p>
+              <p className="text-lg text-white/60 mb-8">
+                Can you follow along and learn cool things about every place he goes?
+              </p>
+
+              <motion.button
+                onClick={dismissIntro}
+                className="px-12 py-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold text-2xl rounded-full shadow-2xl touch-manipulation"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                animate={{ boxShadow: ['0 0 30px rgba(251,191,36,0.4)', '0 0 60px rgba(251,191,36,0.8)', '0 0 30px rgba(251,191,36,0.4)'] }}
+                transition={{ boxShadow: { duration: 1.5, repeat: Infinity } }}
+              >
+                LET&apos;S GO! 🚀
+              </motion.button>
+
+              <div className="mt-8 flex justify-center gap-3">
+                {['✈️', '🚗', '📦', '🤠', '🌽', '🏠'].map((e, i) => (
+                  <motion.span
+                    key={i}
+                    className="text-3xl"
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                  >
+                    {e}
+                  </motion.span>
+                ))}
+              </div>
             </motion.div>
-          </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <motion.button
-            onClick={handleReset}
-            className="w-14 h-14 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation"
-            whileHover={{ scale: 1.1 }}
+      {/* ===== SIMPLIFIED TOP BAR ===== */}
+      <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
+        {/* Left: Home button only */}
+        <Link href="/" className="pointer-events-auto">
+          <motion.div
+            className="w-12 h-12 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-2xl"
             whileTap={{ scale: 0.9 }}
           >
-            <RotateCcw className="w-6 h-6 text-foreground" />
-          </motion.button>
+            🏠
+          </motion.div>
+        </Link>
+
+        {/* Center: Title (smaller) */}
+        <div className="bg-card/70 backdrop-blur-sm rounded-full px-4 py-1.5 shadow-md border border-border">
+          <span className="text-sm font-bold text-foreground">TayTrack 2000</span>
         </div>
 
-        {/* Center - Title */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="bg-card/80 backdrop-blur-sm rounded-full px-6 py-2 shadow-lg border border-border"
+        {/* Right: Simple emoji menu button */}
+        <motion.button
+          onClick={() => {
+            soundManager.tap();
+            setMenuPanel(menuPanel === 'menu' ? 'none' : 'menu');
+          }}
+          className="pointer-events-auto w-12 h-12 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-2xl"
+          whileTap={{ scale: 0.9 }}
         >
-          <h1 className="text-lg font-bold text-foreground">
-            TayTrack 2000
-          </h1>
-        </motion.div>
-
-        {/* Right side - Journal, Games, Badges, Sound */}
-        <div className="flex gap-2 pointer-events-auto">
-          <motion.button
-            onClick={() => {
-              soundManager.tap();
-              setShowJournal(true);
-            }}
-            className="w-14 h-14 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            title="Dad's Journal"
-          >
-            <BookOpen className="w-6 h-6 text-foreground" />
-          </motion.button>
-
-          <motion.button
-            onClick={() => {
-              soundManager.tap();
-              setShowGames(true);
-            }}
-            className="w-14 h-14 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Gamepad2 className="w-6 h-6 text-foreground" />
-          </motion.button>
-
-          <motion.button
-            onClick={() => {
-              soundManager.tap();
-              setShowBadges(true);
-            }}
-            className="relative w-14 h-14 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Trophy className="w-6 h-6 text-foreground" />
-            {earnedBadges.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
-                {earnedBadges.length}
-              </span>
-            )}
-          </motion.button>
-
-          <SoundToggle />
-        </div>
+          ⭐
+        </motion.button>
       </div>
 
+      {/* ===== SIMPLE MENU (replaces 4 toolbar buttons) ===== */}
+      <AnimatePresence>
+        {menuPanel === 'menu' && (
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            className="absolute top-16 right-3 z-40 pointer-events-auto"
+          >
+            <div className="bg-card/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border p-3 space-y-2 w-48">
+              <button
+                onClick={() => { soundManager.tap(); setMenuPanel('none'); setMenuPanel('badges'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 touch-manipulation text-left"
+              >
+                <span className="text-2xl">🏆</span>
+                <span className="font-bold text-sm text-foreground">My Stickers</span>
+                {earnedBadges.length > 0 && (
+                  <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">{earnedBadges.length}</span>
+                )}
+              </button>
+              <button
+                onClick={() => { soundManager.tap(); setMenuPanel('none'); setMenuPanel('journal'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 touch-manipulation text-left"
+              >
+                <span className="text-2xl">📖</span>
+                <span className="font-bold text-sm text-foreground">Dad&apos;s Story</span>
+              </button>
+              <button
+                onClick={() => { soundManager.tap(); setMenuPanel('none'); setMenuPanel('games'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 touch-manipulation text-left"
+              >
+                <span className="text-2xl">🎮</span>
+                <span className="font-bold text-sm text-foreground">Play Games</span>
+              </button>
+              <button
+                onClick={() => { soundManager.tap(); useGameStore.getState().toggleMute(); setMenuPanel('none'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 touch-manipulation text-left"
+              >
+                <span className="text-2xl">{isMuted ? '🔇' : '🔊'}</span>
+                <span className="font-bold text-sm text-foreground">{isMuted ? 'Sound On' : 'Sound Off'}</span>
+              </button>
+              <button
+                onClick={() => { setMenuPanel('none'); handleReset(); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 touch-manipulation text-left"
+              >
+                <span className="text-2xl">🔄</span>
+                <span className="font-bold text-sm text-foreground">Start Over</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* City Modal */}
-      <CityModal
-        cityId={selectedCity}
-        onClose={() => setSelectedCity(null)}
-        onPlayGame={handlePlayGame}
-      />
+      <CityModal cityId={selectedCity} onClose={() => setSelectedCity(null)} onPlayGame={handlePlayGame} />
 
       {/* Badge Collection */}
-      <BadgeCollection
-        isOpen={showBadges}
-        onClose={() => setShowBadges(false)}
-      />
+      <BadgeCollection isOpen={menuPanel === 'badges'} onClose={() => setMenuPanel('none')} />
 
       {/* Daily Journal */}
-      <DailyJournal
-        isOpen={showJournal}
-        onClose={() => setShowJournal(false)}
-      />
+      <DailyJournal isOpen={menuPanel === 'journal'} onClose={() => setMenuPanel('none')} />
 
       {/* Games Menu */}
       <AnimatePresence>
-        {showGames && (
+        {menuPanel === 'games' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-            onClick={() => {
-              soundManager.tap();
-              setShowGames(false);
-            }}
+            onClick={() => setMenuPanel('none')}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -263,52 +307,39 @@ export default function GamePage() {
               className="bg-card rounded-3xl p-6 max-w-sm w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-2xl font-bold text-foreground text-center mb-6">
-                Mini Games
-              </h2>
+              <h2 className="text-3xl font-bold text-foreground text-center mb-6">🎮 Games!</h2>
 
               <div className="space-y-4">
                 <motion.button
-                  onClick={() => {
-                    soundManager.tap();
-                    setShowGames(false);
-                    setActiveGame('packing');
-                  }}
-                  className="w-full p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center gap-4 text-white touch-manipulation"
-                  whileTap={{ scale: 0.98 }}
+                  onClick={() => { soundManager.tap(); setMenuPanel('none'); setActiveGame('packing'); }}
+                  className="w-full p-5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center gap-4 text-white touch-manipulation"
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <span className="text-4xl">📦</span>
+                  <span className="text-5xl">📦</span>
                   <div className="text-left">
-                    <div className="font-bold text-lg">Packing Game</div>
-                    <div className="text-sm opacity-80">Tap boxes to pack them!</div>
+                    <div className="font-bold text-xl">Pack Boxes!</div>
+                    <div className="text-sm opacity-80">Tap the falling boxes!</div>
                   </div>
                 </motion.button>
 
                 <motion.button
-                  onClick={() => {
-                    soundManager.tap();
-                    setShowGames(false);
-                    setActiveGame('memory');
-                  }}
-                  className="w-full p-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center gap-4 text-white touch-manipulation"
-                  whileTap={{ scale: 0.98 }}
+                  onClick={() => { soundManager.tap(); setMenuPanel('none'); setActiveGame('memory'); }}
+                  className="w-full p-5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center gap-4 text-white touch-manipulation"
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <span className="text-4xl">🎴</span>
+                  <span className="text-5xl">🎴</span>
                   <div className="text-left">
-                    <div className="font-bold text-lg">Memory Match</div>
-                    <div className="text-sm opacity-80">Find matching pairs!</div>
+                    <div className="font-bold text-xl">Match Pairs!</div>
+                    <div className="text-sm opacity-80">Find the matching cards!</div>
                   </div>
                 </motion.button>
               </div>
 
               <button
-                onClick={() => {
-                  soundManager.tap();
-                  setShowGames(false);
-                }}
-                className="w-full mt-4 py-3 bg-muted text-foreground rounded-xl font-bold touch-manipulation"
+                onClick={() => setMenuPanel('none')}
+                className="w-full mt-4 py-4 bg-muted text-foreground rounded-xl font-bold text-lg touch-manipulation"
               >
-                Close
+                ← Back
               </button>
             </motion.div>
           </motion.div>
@@ -317,27 +348,19 @@ export default function GamePage() {
 
       {/* Active Game */}
       <AnimatePresence>
-        {activeGame === 'packing' && (
-          <PackingGame onClose={() => setActiveGame(null)} />
-        )}
-        {activeGame === 'memory' && (
-          <MemoryGame onClose={() => setActiveGame(null)} />
-        )}
+        {activeGame === 'packing' && <PackingGame onClose={() => setActiveGame(null)} />}
+        {activeGame === 'memory' && <MemoryGame onClose={() => setActiveGame(null)} />}
       </AnimatePresence>
 
-      {/* City Explorer bar — always visible when not traveling */}
-      {!activeGame && (
-        <CityExplorer
-          cityId={exploreCityId}
-          onSelectPOI={handlePOITap}
-          activePOIId={selectedPOI?.id || null}
-        />
+      {/* City Explorer bar */}
+      {!activeGame && !showIntro && (
+        <CityExplorer cityId={exploreCityId} onSelectPOI={handlePOITap} activePOIId={selectedPOI?.id || null} />
       )}
 
       {/* Landmark Explorer */}
       <LandmarkExplorer poi={selectedPOI} onClose={handleClosePOI} />
 
-      {/* Achievement Popup - always on top */}
+      {/* Achievement Popup */}
       <AchievementPopup />
     </div>
   );

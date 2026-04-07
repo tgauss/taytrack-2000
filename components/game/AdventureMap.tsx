@@ -659,12 +659,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
         )}
       </AnimatePresence>
 
-      {mapLoaded && distanceFromHome > 0 && !isJourneyComplete && (
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="absolute top-20 left-4 z-20 bg-black/60 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20">
-          <div className="text-xs font-bold text-white/80 mb-1">FROM HOME</div>
-          <div className="text-xl font-bold text-cyan-400 font-mono">{distanceFromHome.toLocaleString()} mi</div>
-        </motion.div>
-      )}
+      {/* Distance counter removed — too complex for kids */}
 
       <SleepsCounter />
 
@@ -707,13 +702,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
 
       <ProgressCaterpillar />
 
-      <div className="absolute top-20 right-4 z-20 bg-black/60 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-        <div className="text-xs font-bold text-white/80 mb-2">ROUTE KEY</div>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2"><div className="w-6 h-1 bg-[#00d4ff] rounded" /><span className="text-white text-sm">✈️ Flying</span></div>
-          <div className="flex items-center gap-2"><div className="w-6 h-0 border-t-2 border-dashed border-[#ffd93d]" /><span className="text-white text-sm">🚗 Driving</span></div>
-        </div>
-      </div>
+      {/* Route key removed — too cluttered for kids */}
     </div>
   );
 }

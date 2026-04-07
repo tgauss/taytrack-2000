@@ -37,32 +37,34 @@ export function AchievementPopup() {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none"
         >
-          {/* Confetti particles */}
+          {/* BIG confetti explosion */}
           <div className="absolute inset-0 overflow-hidden">
-            {Array.from({ length: 30 }).map((_, i) => (
+            {Array.from({ length: 60 }).map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute w-4 h-4 rounded-full"
+                className="absolute rounded-full"
                 style={{
                   backgroundColor: [
-                    '#ff6b9d', '#ffd93d', '#4ade80', '#60a5fa', '#a855f7'
-                  ][i % 5],
+                    '#ff6b9d', '#ffd93d', '#4ade80', '#60a5fa', '#a855f7', '#f97316', '#ec4899'
+                  ][i % 7],
+                  width: `${Math.random() * 12 + 6}px`,
+                  height: `${Math.random() * 12 + 6}px`,
                   left: `${Math.random() * 100}%`,
                 }}
-                initial={{ 
-                  top: '50%', 
+                initial={{
+                  top: '50%',
                   scale: 0,
-                  rotate: 0 
+                  rotate: 0
                 }}
-                animate={{ 
-                  top: ['50%', `${Math.random() * 100}%`],
-                  scale: [0, 1, 0],
-                  rotate: [0, 360 * (Math.random() > 0.5 ? 1 : -1)],
-                  x: [0, (Math.random() - 0.5) * 200],
+                animate={{
+                  top: ['50%', `${Math.random() * 120 - 10}%`],
+                  scale: [0, 1.5, 0],
+                  rotate: [0, 720 * (Math.random() > 0.5 ? 1 : -1)],
+                  x: [0, (Math.random() - 0.5) * 400],
                 }}
-                transition={{ 
-                  duration: 2,
-                  delay: Math.random() * 0.3,
+                transition={{
+                  duration: 2.5,
+                  delay: Math.random() * 0.5,
                   ease: "easeOut"
                 }}
               />
