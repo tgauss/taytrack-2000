@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Volume2, ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
 import { soundManager } from '@/lib/sounds';
 import { useGameStore } from '@/lib/game-state';
+import { speakText as speak, stopElevenLabsSpeech, isElevenLabsAvailable } from '@/lib/voice';
 import type { POI } from '@/lib/poi-data';
 
 interface LandmarkExplorerProps {
@@ -17,38 +18,39 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const { isMuted } = useGameStore();
+  const hasAI = isElevenLabsAvailable();
 
   // Reset state when POI changes
   useEffect(() => {
     setShowFullLesson(false);
     setShowVideo(false);
-    window.speechSynthesis.cancel();
+    stopElevenLabsSpeech();
     setIsSpeaking(false);
   }, [poi?.id]);
 
   // Auto-read the fun fact on open
   useEffect(() => {
     if (poi && !isMuted) {
-      const timer = setTimeout(() => speakText(poi.funFact), 600);
+      const timer = setTimeout(() => {
+        speak(
+          poi.funFact,
+          'excited',
+          () => setIsSpeaking(true),
+          () => setIsSpeaking(false),
+        );
+      }, 600);
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poi?.id, isMuted]);
 
-  const speakText = useCallback((text: string) => {
+  const handleSpeak = useCallback((text: string, voice: 'narrator' | 'excited' | 'storyteller' = 'narrator') => {
     if (isMuted) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.85;
-    utterance.pitch = 1.1;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
+    speak(text, voice, () => setIsSpeaking(true), () => setIsSpeaking(false));
   }, [isMuted]);
 
   const handleClose = () => {
-    window.speechSynthesis.cancel();
+    stopElevenLabsSpeech();
     soundManager.tap();
     onClose();
   };
@@ -90,15 +92,28 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
                   <h3 className="text-xl font-bold text-white drop-shadow-md leading-tight">
                     {poi.name}
                   </h3>
-                  <p className="text-white/70 text-xs mt-0.5">
-                    Tap to learn more!
-                  </p>
+                  {hasAI && (
+                    <p className="text-white/60 text-[10px] mt-0.5">
+                      🎙️ AI voice powered by ElevenLabs
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Image */}
+              {poi.imageUrl && (
+                <div className="rounded-2xl overflow-hidden border border-border">
+                  <img
+                    src={poi.imageUrl}
+                    alt={poi.name}
+                    className="w-full h-40 object-cover"
+                  />
+                </div>
+              )}
+
               {/* Fun fact card */}
               <div className="bg-muted rounded-2xl p-4">
                 {isSpeaking && (
@@ -108,19 +123,19 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
                     className="flex items-center gap-2 text-primary mb-2"
                   >
                     <Volume2 className="w-4 h-4" />
-                    <span className="text-xs font-medium">Reading...</span>
+                    <span className="text-xs font-medium">{hasAI ? 'Talking...' : 'Reading...'}</span>
                   </motion.div>
                 )}
                 <p className="text-base leading-relaxed text-foreground font-medium">
                   {poi.funFact}
                 </p>
                 <button
-                  onClick={() => speakText(poi.funFact)}
+                  onClick={() => handleSpeak(poi.funFact, 'excited')}
                   disabled={isSpeaking}
                   className="mt-3 px-4 py-2 bg-primary/20 text-primary rounded-full text-sm font-bold flex items-center gap-2 disabled:opacity-50 touch-manipulation"
                 >
                   <Volume2 className="w-4 h-4" />
-                  Read to Me
+                  {hasAI ? '🎙️ Tell Me!' : 'Read to Me'}
                 </button>
               </div>
 
@@ -140,12 +155,12 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
                     </div>
                   </div>
                   <button
-                    onClick={() => speakText(`Did you know? ${poi.didYouKnow}`)}
+                    onClick={() => handleSpeak(`Did you know? ${poi.didYouKnow}`, 'narrator')}
                     disabled={isSpeaking}
                     className="mt-2 ml-8 px-3 py-1.5 bg-amber-500/20 text-amber-500 rounded-full text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 touch-manipulation"
                   >
                     <Volume2 className="w-3 h-3" />
-                    Listen
+                    {hasAI ? '🎙️ Listen' : 'Listen'}
                   </button>
                 </motion.div>
               )}
@@ -160,9 +175,10 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
                 <button
                   onClick={() => {
                     soundManager.tap();
-                    setShowFullLesson(!showFullLesson);
-                    if (!showFullLesson && !isMuted) {
-                      setTimeout(() => speakText(poi.historyLesson), 300);
+                    const opening = !showFullLesson;
+                    setShowFullLesson(opening);
+                    if (opening && !isMuted) {
+                      setTimeout(() => handleSpeak(poi.historyLesson, 'storyteller'), 300);
                     }
                   }}
                   className="w-full p-4 flex items-center justify-between text-left touch-manipulation"
@@ -194,13 +210,13 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            speakText(poi.historyLesson);
+                            handleSpeak(poi.historyLesson, 'storyteller');
                           }}
                           disabled={isSpeaking}
                           className="mt-3 px-4 py-2 bg-indigo-500/20 text-indigo-400 rounded-full text-xs font-bold flex items-center gap-2 disabled:opacity-50 touch-manipulation"
                         >
                           <Volume2 className="w-4 h-4" />
-                          Read History to Me
+                          {hasAI ? '🎙️ Tell Me the Story!' : 'Read History to Me'}
                         </button>
                       </div>
                     </motion.div>
