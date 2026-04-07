@@ -8,27 +8,9 @@ function poiImage(lng: number, lat: number, zoom = 17): string {
   return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lng},${lat},${zoom},0/400x250@2x?access_token=${MAPBOX_TOKEN}`;
 }
 
-// Real photos from Wikimedia Commons (public domain / CC licensed)
-const WIKI_IMAGES: Record<string, string> = {
-  'tulsa-golden-driller': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Golden_Driller_full_Tulsa_OK_2024-03-01_14-39-41.jpg/800px-Golden_Driller_full_Tulsa_OK_2024-03-01_14-39-41.jpg',
-  'tulsa-blue-whale': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Catoosa_Blue_Whale_2.jpg/800px-Catoosa_Blue_Whale_2.jpg',
-  'tulsa-gathering-place': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Gathering_Place_-_45581648835.jpg/800px-Gathering_Place_-_45581648835.jpg',
-  'tulsa-route66': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Tulsa_Route_66_sign_Tulsa_OK_2025-12-08_13-32-43.jpg/800px-Tulsa_Route_66_sign_Tulsa_OK_2025-12-08_13-32-43.jpg',
-  'lincoln-capitol': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Tower%2C_Nebraska_State_Capitol%2C_K_Street%2C_Lincoln%2C_NE.jpg/800px-Tower%2C_Nebraska_State_Capitol%2C_K_Street%2C_Lincoln%2C_NE.jpg',
-  'lincoln-stadium': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Memorial_Stadium%2C_Home_of_the_University_of_Nebraska_Cornhuskers%2C_Lincoln%2C_Nebraska_%2869182845%29.jpg/800px-Memorial_Stadium%2C_Home_of_the_University_of_Nebraska_Cornhuskers%2C_Lincoln%2C_Nebraska_%2869182845%29.jpg',
-  'lincoln-morrill': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Elephant_Hall%2C_Morrill_Hall%2C_University_of_Nebraska-Lincoln%2C_Lincoln%2C_Nebraska%2C_USA.jpg/800px-Elephant_Hall%2C_Morrill_Hall%2C_University_of_Nebraska-Lincoln%2C_Lincoln%2C_Nebraska%2C_USA.jpg',
-  'lincoln-haymarket': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Lincoln%2C_Nebraska_Haymarket_P_St_from_9th_1.JPG/800px-Lincoln%2C_Nebraska_Haymarket_P_St_from_9th_1.JPG',
-  'lincoln-sunken-gardens': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Sunken_Gardens_%28inside_2%29%2C_Lincoln%2C_Nebraska%2C_USA.jpg/800px-Sunken_Gardens_%28inside_2%29%2C_Lincoln%2C_Nebraska%2C_USA.jpg',
-  'omaha-zoo': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Desert_Dome_Omaha_Zoo.jpg/800px-Desert_Dome_Omaha_Zoo.jpg',
-  'omaha-bridge': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Bob_Kerrey_Pedestrian_Bridge_2025b.jpg/800px-Bob_Kerrey_Pedestrian_Bridge_2025b.jpg',
-  'omaha-durham': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Omaha_Union_Station_%28The_Durham_Museum%29%2C_10th_Street%2C_Omaha%2C_NE.jpg/800px-Omaha_Union_Station_%28The_Durham_Museum%29%2C_10th_Street%2C_Omaha%2C_NE.jpg',
-  'omaha-old-market': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/091407-OldMarket.jpg/800px-091407-OldMarket.jpg',
-  'omaha-bigboy': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Union_Pacific_%22Big_Boy%22_No._4023_at_Kenefick_Park_-_September_2012.jpg/800px-Union_Pacific_%22Big_Boy%22_No._4023_at_Kenefick_Park_-_September_2012.jpg',
-};
-
-// Use real photo if available, fall back to satellite image
-function getPoiImage(id: string, lng: number, lat: number): string {
-  return WIKI_IMAGES[id] || poiImage(lng, lat);
+// Wikimedia blocks hotlinking (403), so all POIs use Mapbox satellite aerial views
+function getPoiImage(_id: string, lng: number, lat: number): string {
+  return poiImage(lng, lat);
 }
 
 export interface POI {

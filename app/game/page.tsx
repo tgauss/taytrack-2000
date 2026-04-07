@@ -55,15 +55,13 @@ export default function GamePage() {
   const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void } | null>(null);
   const { resetGame, earnedBadges, currentLocation, isMuted } = useGameStore();
   const exploreCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
-  const hasStarted = useRef(false);
-
-  // Show intro on first visit
+  // Show intro only when starting fresh at vancouver (not when resuming mid-trip)
   useEffect(() => {
-    if (currentLocation === 'vancouver' && !hasStarted.current) {
-      hasStarted.current = true;
+    if (currentLocation === 'vancouver') {
       setShowIntro(true);
     }
-  }, [currentLocation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
   const handlePOITap = useCallback((poi: POI) => {
     setSelectedPOI(poi);
