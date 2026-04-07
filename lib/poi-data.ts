@@ -8,9 +8,27 @@ function poiImage(lng: number, lat: number, zoom = 17): string {
   return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lng},${lat},${zoom},0/400x250@2x?access_token=${MAPBOX_TOKEN}`;
 }
 
-// Wikimedia blocks hotlinking (403), so all POIs use Mapbox satellite aerial views
-function getPoiImage(_id: string, lng: number, lat: number): string {
-  return poiImage(lng, lat);
+// Real photos downloaded from Wikimedia Commons and hosted locally
+const LOCAL_PHOTOS: Record<string, string> = {
+  'tulsa-golden-driller': '/landmarks/golden-driller.jpg',
+  'tulsa-blue-whale': '/landmarks/blue-whale.jpg',
+  'tulsa-gathering-place': '/landmarks/gathering-place.jpg',
+  'tulsa-route66': '/landmarks/route66.jpg',
+  'lincoln-capitol': '/landmarks/capitol.jpg',
+  'lincoln-stadium': '/landmarks/memorial-stadium.jpg',
+  'lincoln-morrill': '/landmarks/morrill-hall.jpg',
+  'lincoln-haymarket': '/landmarks/haymarket.jpg',
+  'lincoln-sunken-gardens': '/landmarks/sunken-gardens.jpg',
+  'omaha-zoo': '/landmarks/desert-dome.jpg',
+  'omaha-bridge': '/landmarks/bob-kerrey-bridge.jpg',
+  'omaha-durham': '/landmarks/durham-museum.jpg',
+  'omaha-old-market': '/landmarks/old-market.jpg',
+  'omaha-bigboy': '/landmarks/big-boy-train.jpg',
+};
+
+// Use local photo if available, fall back to satellite image
+function getPoiImage(id: string, lng: number, lat: number): string {
+  return LOCAL_PHOTOS[id] || poiImage(lng, lat);
 }
 
 export interface POI {
