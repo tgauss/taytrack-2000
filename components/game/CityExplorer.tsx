@@ -24,7 +24,7 @@ export function CityExplorer({ cityId, onSelectPOI, activePOIId }: CityExplorerP
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 60 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200, delay: 0.3 }}
-        className="absolute bottom-[100px] left-4 right-4 z-30"
+        className="absolute bottom-[190px] left-4 right-4 z-30"
       >
         <div className="bg-card/90 backdrop-blur-md rounded-2xl border border-border shadow-2xl p-3">
           {/* Header */}
