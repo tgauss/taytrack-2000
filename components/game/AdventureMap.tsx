@@ -169,14 +169,20 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     const startLocKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
     const startLoc = LOCATIONS[startLocKey] || LOCATIONS.vancouver;
 
+    // If starting fresh (at vancouver), begin at PDX airport for the departure experience
+    const isAtStart = currentLocation === 'vancouver';
+    const initialCenter: [number, number] = isAtStart
+      ? AIRPORTS.pdx.lngLat
+      : [startLoc.lng, startLoc.lat];
+
     // Use Mapbox Standard style with dusk lighting for cinematic feel
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/standard',
-      center: [startLoc.lng, startLoc.lat],
-      zoom: ARRIVAL_ZOOM,
-      pitch: ARRIVAL_PITCH,
-      bearing: 0,
+      center: initialCenter,
+      zoom: isAtStart ? 14 : ARRIVAL_ZOOM,
+      pitch: isAtStart ? 70 : ARRIVAL_PITCH,
+      bearing: isAtStart ? 150 : 0, // Look down the runway at PDX
       antialias: true,
     });
 
@@ -257,7 +263,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
         <div class="vehicle-emoji">✈️</div>
       </div>`;
       vehicleEl.style.cssText = 'transform:translate(-50%,-50%);';
-      vehicleMarkerRef.current = new mapboxgl.Marker({ element: vehicleEl }).setLngLat([startLoc.lng, startLoc.lat]).addTo(map.current);
+      vehicleMarkerRef.current = new mapboxgl.Marker({ element: vehicleEl }).setLngLat(initialCenter).addTo(map.current);
 
       // CSS
       const style = document.createElement('style');
@@ -424,15 +430,21 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       // Generate flight arc
       const arcPath = generateArc(fromCoord, toCoord, 80);
 
-      // Start with a zoom-out from current position
+      // Move vehicle to departure airport
+      vehicleMarkerRef.current?.setLngLat(fromCoord);
+
+      // Dramatic takeoff sequence: zoom in on airport, then pull back
       map.current.flyTo({
         center: fromCoord,
-        zoom: 12,
-        pitch: 45,
-        duration: 1000,
+        zoom: 15,
+        pitch: 70,
+        bearing: getBearing(fromCoord[1], fromCoord[0], toCoord[1], toCoord[0]),
+        duration: 1500,
       });
 
       setTimeout(() => {
+        // Play takeoff sound
+        soundManager.whoosh();
         animateVehicle(arcPath, 'flight', () => {
           // After flight, check if there's an airport-to-hotel drive
           const hotelRoute = getAirportToHotelRoute(toKey);
@@ -447,7 +459,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
             finishTravel(nextLocation, toLoc);
           }
         });
-      }, 1100);
+      }, 1700);
 
     } else {
       // DRIVE
@@ -545,7 +557,10 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
             onClick={handleGoNext} disabled={isAnimating}
             className="absolute bottom-28 left-1/2 -translate-x-1/2 px-10 py-5 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-2xl rounded-full shadow-2xl disabled:opacity-50 z-20 touch-manipulation"
             style={{ minWidth: 220, minHeight: 64 }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <span className="flex items-center gap-3">GO to {nextLocName}! <span className="text-3xl">👆</span></span>
+            <span className="flex items-center gap-3">
+              {currentLocation === 'vancouver' ? '✈️ BLAST OFF!' : `GO to ${nextLocName}!`}
+              <span className="text-3xl">👆</span>
+            </span>
           </motion.button>
         )}
       </AnimatePresence>
