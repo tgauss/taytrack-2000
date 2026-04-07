@@ -13,7 +13,9 @@ import { SleepsCounter } from './SleepsCounter';
 
 mapboxgl.accessToken = 'pk.eyJ1IjoidGdhdXNzIiwiYSI6ImUxelFyZWsifQ.ewANL0BvfdZa9RRcOIQSVA';
 
-const AIRPLANE_MODEL_URI = 'https://docs.mapbox.com/mapbox-gl-js/assets/airplane.glb';
+// Cartoon 3D models from Poly Pizza (CC-BY 3.0 / CC0)
+const AIRPLANE_MODEL_URI = 'https://static.poly.pizza/b91d675e-8ebc-46e1-b739-80f5daba8515.glb'; // "Very Cute Airplane" by Akash Rudra
+const TRUCK_MODEL_URI = 'https://static.poly.pizza/4e925a01-dbb8-4aab-848b-221306b835ea.glb'; // "Pickup Truck" by Quaternius (CC0)
 
 // City centers for ground exploration
 const LOCATIONS: Record<string, { name: string; lng: number; lat: number; emoji: string; color: string }> = {
@@ -219,8 +221,9 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
         map.current.addLayer({ id: 'vehicle-trail-line', type: 'line', source: 'vehicle-trail', paint: { 'line-color': '#00d4ff', 'line-width': 3, 'line-opacity': 0.9 } });
       } catch {}
 
-      // 3D airplane model
+      // 3D vehicle models (airplane + truck)
       try {
+        // Airplane model (hidden by default, shown during flights)
         map.current.addSource('airplane-model', {
           type: 'model',
           models: {
@@ -236,20 +239,51 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
           type: 'model',
           source: 'airplane-model',
           slot: 'top',
+          layout: { visibility: 'none' },
           paint: {
             'model-scale': [
               'interpolate', ['exponential', 0.5], ['zoom'],
-              2.0, ['literal', [4000.0, 4000.0, 4000.0]],
-              8.0, ['literal', [400.0, 400.0, 400.0]],
-              14.0, ['literal', [5.0, 5.0, 5.0]],
+              2.0, ['literal', [2000.0, 2000.0, 2000.0]],
+              6.0, ['literal', [200.0, 200.0, 200.0]],
+              10.0, ['literal', [20.0, 20.0, 20.0]],
+              14.0, ['literal', [3.0, 3.0, 3.0]],
             ],
             'model-type': 'location-indicator',
             'model-opacity': 1.0,
             'model-translation': [0, 0, ['feature-state', 'z-elevation']],
           },
         });
+
+        // Truck model (hidden by default, shown during drives)
+        map.current.addSource('truck-model', {
+          type: 'model',
+          models: {
+            truck: {
+              uri: TRUCK_MODEL_URI,
+              position: initialCenter,
+              orientation: [0, 0, 0],
+            },
+          },
+        });
+        map.current.addLayer({
+          id: 'truck-3d',
+          type: 'model',
+          source: 'truck-model',
+          slot: 'top',
+          layout: { visibility: 'none' },
+          paint: {
+            'model-scale': [
+              'interpolate', ['exponential', 0.5], ['zoom'],
+              6.0, ['literal', [100.0, 100.0, 100.0]],
+              10.0, ['literal', [15.0, 15.0, 15.0]],
+              14.0, ['literal', [3.0, 3.0, 3.0]],
+            ],
+            'model-type': 'location-indicator',
+            'model-opacity': 1.0,
+          },
+        });
       } catch (e) {
-        console.warn('[TAYTRACK] 3D model layer not supported:', e);
+        console.warn('[TAYTRACK] 3D model layers not supported:', e);
       }
 
       // Draw route lines
@@ -375,14 +409,15 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     const emojiDiv = vehicleMarkerRef.current?.getElement().querySelector('.vehicle-emoji');
     if (emojiDiv) emojiDiv.innerHTML = segmentType === 'flight' ? '✈️' : '🚗';
 
-    // Show/hide 3D airplane model + emoji marker
+    // Show/hide 3D models + emoji marker
     try {
-      if (map.current.getLayer('airplane-3d')) {
-        map.current.setLayoutProperty('airplane-3d', 'visibility', segmentType === 'flight' ? 'visible' : 'none');
-      }
-      // Hide emoji marker during flights (3D model takes over), show during drives
+      const hasAirplane = !!map.current.getLayer('airplane-3d');
+      const hasTruck = !!map.current.getLayer('truck-3d');
+      if (hasAirplane) map.current.setLayoutProperty('airplane-3d', 'visibility', segmentType === 'flight' ? 'visible' : 'none');
+      if (hasTruck) map.current.setLayoutProperty('truck-3d', 'visibility', segmentType === 'drive' ? 'visible' : 'none');
+      // Hide emoji marker when 3D model is active
       const vehicleEl = vehicleMarkerRef.current?.getElement();
-      if (vehicleEl) vehicleEl.style.display = segmentType === 'flight' ? 'none' : '';
+      if (vehicleEl) vehicleEl.style.display = (hasAirplane || hasTruck) ? 'none' : '';
     } catch {}
 
     setAnimating(true);
@@ -462,11 +497,27 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
                 bearing: getBearing(hotelRoute[0][1], hotelRoute[0][0], hotelRoute[Math.min(5, hotelRoute.length-1)][1], hotelRoute[Math.min(5, hotelRoute.length-1)][0]),
                 duration: 2000,
               });
+              // Show truck model for the drive
+              try { map.current?.setLayoutProperty('truck-3d', 'visibility', 'visible'); } catch {}
               setTimeout(() => {
                 if (!map.current) return;
                 activeAnimRef.current = animateRoute(map.current, hotelRoute, AIRPORT_TO_HOTEL_CONFIG, {
-                  onProgress: (_p, pos) => vehicleMarkerRef.current?.setLngLat(pos),
-                  onComplete: () => finishTravel(nextLocation, toLoc),
+                  onProgress: (_p, pos) => {
+                    vehicleMarkerRef.current?.setLngLat(pos);
+                    try {
+                      const truckSrc = map.current?.getSource('truck-model') as any;
+                      if (truckSrc?.setModels) {
+                        const idx = Math.min(Math.floor(_p * hotelRoute.length), hotelRoute.length - 2);
+                        const nextPt = hotelRoute[idx + 1];
+                        const bearing = getBearing(pos[1], pos[0], nextPt[1], nextPt[0]);
+                        truckSrc.setModels({ truck: { uri: TRUCK_MODEL_URI, position: pos, orientation: [0, 0, bearing + 90] } });
+                      }
+                    } catch {}
+                  },
+                  onComplete: () => {
+                    try { map.current?.setLayoutProperty('truck-3d', 'visibility', 'none'); } catch {}
+                    finishTravel(nextLocation, toLoc);
+                  },
                 });
               }, 2200);
             } else {
@@ -494,8 +545,21 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
         activeAnimRef.current = animateRoute(map.current, drivePath, isLong ? DRIVE_CONFIG : SHORT_DRIVE_CONFIG, {
           onProgress: (_phase, pos) => {
             vehicleMarkerRef.current?.setLngLat(pos);
+            // Update truck 3D model position and bearing
+            try {
+              const truckSource = map.current?.getSource('truck-model') as any;
+              if (truckSource?.setModels) {
+                const idx = Math.min(Math.floor(_phase * drivePath.length), drivePath.length - 2);
+                const nextPt = drivePath[idx + 1];
+                const bearing = getBearing(pos[1], pos[0], nextPt[1], nextPt[0]);
+                truckSource.setModels({
+                  truck: { uri: TRUCK_MODEL_URI, position: pos, orientation: [0, 0, bearing + 90] },
+                });
+              }
+            } catch {}
           },
           onComplete: () => {
+            try { map.current?.setLayoutProperty('truck-3d', 'visibility', 'none'); } catch {}
             removeWaypointMarkers();
             finishTravel(nextLocation, toLoc);
           },
@@ -509,6 +573,12 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     moveToLocation(nextLocation);
     soundManager.arrive();
     setPhase('arrived');
+
+    // Show emoji marker again, hide all 3D models
+    const vEl = vehicleMarkerRef.current?.getElement();
+    if (vEl) vEl.style.display = '';
+    try { map.current?.setLayoutProperty('airplane-3d', 'visibility', 'none'); } catch {}
+    try { map.current?.setLayoutProperty('truck-3d', 'visibility', 'none'); } catch {}
 
     const cityName = LOCATIONS[nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation]?.name || '';
     setWelcomeCity(cityName);
