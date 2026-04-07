@@ -48,7 +48,7 @@ export function CityExplorer({ cityId, onSelectPOI, activePOIId }: CityExplorerP
                     soundManager.tap();
                     onSelectPOI(poi);
                   }}
-                  className={`flex-shrink-0 snap-center rounded-2xl p-3 flex flex-col items-center gap-1.5 transition-all touch-manipulation ${
+                  className={`flex-shrink-0 snap-center rounded-2xl overflow-hidden flex flex-col items-center transition-all touch-manipulation ${
                     isActive
                       ? 'ring-2 ring-offset-2 ring-offset-card'
                       : 'hover:scale-105'
@@ -57,28 +57,35 @@ export function CityExplorer({ cityId, onSelectPOI, activePOIId }: CityExplorerP
                     background: isActive
                       ? `linear-gradient(135deg, ${poi.color}44, ${poi.color}22)`
                       : 'rgba(255,255,255,0.05)',
-                    width: '100px',
-                    minWidth: '100px',
-                    borderColor: isActive ? poi.color : 'transparent',
+                    width: '110px',
+                    minWidth: '110px',
+                    borderColor: isActive ? poi.color : 'rgba(255,255,255,0.1)',
                     borderWidth: '2px',
                     borderStyle: 'solid',
-                    ringColor: poi.color,
                   }}
                   whileTap={{ scale: 0.92 }}
                 >
-                  <motion.span
-                    className="text-3xl"
-                    animate={isActive ? { scale: [1, 1.2, 1] } : {}}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  >
-                    {poi.emoji}
-                  </motion.span>
-                  <span
-                    className="text-[10px] font-bold leading-tight text-center line-clamp-2"
-                    style={{ color: poi.color }}
-                  >
-                    {poi.name}
-                  </span>
+                  {/* Satellite thumbnail */}
+                  {poi.imageUrl && (
+                    <div className="w-full h-16 overflow-hidden">
+                      <img src={poi.imageUrl} alt={poi.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-2 flex flex-col items-center gap-1">
+                    <motion.span
+                      className="text-2xl"
+                      animate={isActive ? { scale: [1, 1.2, 1] } : {}}
+                      transition={{ duration: 1, repeat: Infinity }}
+                    >
+                      {poi.emoji}
+                    </motion.span>
+                    <span
+                      className="text-[10px] font-bold leading-tight text-center line-clamp-2"
+                      style={{ color: poi.color }}
+                    >
+                      {poi.name}
+                    </span>
+                  </div>
                 </motion.button>
               );
             })}
