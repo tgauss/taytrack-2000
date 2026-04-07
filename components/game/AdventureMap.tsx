@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, getNextLocation, getSegmentType, type GameLocation } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
 import { getPOIsForCity, getDriveRoute, AIRPORTS, getAirportToHotelRoute, type POI } from '@/lib/poi-data';
+import { animateRoute, zoomInToRoute, FLIGHT_CONFIG, DRIVE_CONFIG, SHORT_DRIVE_CONFIG } from '@/lib/cinematic';
 import { ProgressCaterpillar } from './ProgressCaterpillar';
 import { SleepsCounter } from './SleepsCounter';
 
@@ -326,69 +327,10 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     }
   }, [currentLocation, mapLoaded]);
 
-  // ---- ANIMATION ENGINE ----
-  const animateVehicle = useCallback((path: [number, number][], type: 'flight' | 'drive', onComplete: () => void) => {
-    if (!vehicleMarkerRef.current || !map.current || path.length < 2) { onComplete(); return; }
+  // Active animation ref (to cancel on unmount)
+  const activeAnimRef = useRef<{ cancel: () => void } | null>(null);
 
-    const baseDuration = type === 'flight' ? 4000 : Math.min(6000, Math.max(2000, path.length * 15));
-    const startTime = performance.now();
-    const trailCoords: [number, number][] = [];
-    const lastIdx = path.length - 1;
-
-    try {
-      const trailColor = type === 'flight' ? '#00d4ff' : '#ffd93d';
-      map.current.setPaintProperty('vehicle-trail-glow', 'line-color', trailColor);
-      map.current.setPaintProperty('vehicle-trail-line', 'line-color', trailColor);
-    } catch {}
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / baseDuration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-
-      const pathIndex = eased * lastIdx;
-      const idx = Math.min(Math.floor(pathIndex), lastIdx);
-      const nextI = Math.min(idx + 1, lastIdx);
-      const t = pathIndex - idx;
-      const currentPos: [number, number] = [
-        path[idx][0] + (path[nextI][0] - path[idx][0]) * t,
-        path[idx][1] + (path[nextI][1] - path[idx][1]) * t,
-      ];
-
-      vehicleMarkerRef.current?.setLngLat(currentPos);
-
-      // Trail
-      trailCoords.push(currentPos);
-      try {
-        const src = map.current?.getSource('vehicle-trail') as mapboxgl.GeoJSONSource;
-        if (src && trailCoords.length >= 2) src.setData({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: trailCoords } });
-      } catch {}
-
-      // Camera
-      if (type === 'drive' && progress > 0.05 && progress < 0.95) {
-        const bearing = getBearing(path[idx][1], path[idx][0], path[nextI][1], path[nextI][0]);
-        map.current?.easeTo({ center: currentPos, zoom: DRIVE_FOLLOW_ZOOM, pitch: 50, bearing, duration: 200 });
-      } else if (type === 'flight') {
-        if (progress < 0.15) {
-          // Takeoff: zoom out gradually
-          const zoomOut = 15 - progress * 80;
-          map.current?.easeTo({ center: currentPos, zoom: Math.max(3.5, zoomOut), pitch: 30, duration: 200 });
-        } else if (progress > 0.85) {
-          // Landing: zoom in gradually
-          const zoomIn = 3.5 + (progress - 0.85) * 80;
-          map.current?.easeTo({ center: currentPos, zoom: Math.min(15, zoomIn), pitch: 45, duration: 200 });
-        } else {
-          map.current?.easeTo({ center: currentPos, duration: 150 });
-        }
-      }
-
-      if (progress < 1) requestAnimationFrame(animate);
-      else onComplete();
-    };
-    requestAnimationFrame(animate);
-  }, []);
-
-  // ---- GO HANDLER ----
+  // ---- GO HANDLER (Cinematic) ----
   const handleGoNext = useCallback(() => {
     if (isAnimating || !map.current) return;
     const nextLocation = getNextLocation(currentLocation);
@@ -400,19 +342,10 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     const emojiDiv = vehicleMarkerRef.current?.getElement().querySelector('.vehicle-emoji');
     if (emojiDiv) emojiDiv.innerHTML = segmentType === 'flight' ? '✈️' : '🚗';
 
-    if (segmentType === 'flight') soundManager.whoosh();
-    else soundManager.vroom();
-
     setAnimating(true);
     setPhase('traveling');
     removePOIMarkers();
     removeWaypointMarkers();
-
-    // Clear trail
-    try {
-      const src = map.current.getSource('vehicle-trail') as mapboxgl.GeoJSONSource;
-      if (src) src.setData({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } });
-    } catch {}
 
     const fromKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
     const toKey = nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation;
@@ -421,65 +354,73 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     if (!fromLoc || !toLoc) return;
 
     if (segmentType === 'flight') {
+      soundManager.whoosh();
+
       // Use airport coordinates for flights
       const flightKey = `${fromKey}-${toKey}`;
       const flightRoute = FLIGHT_ROUTES[flightKey];
       const fromCoord = flightRoute?.from || [fromLoc.lng, fromLoc.lat] as [number, number];
       const toCoord = flightRoute?.to || [toLoc.lng, toLoc.lat] as [number, number];
-
-      // Generate flight arc
-      const arcPath = generateArc(fromCoord, toCoord, 80);
+      const arcPath = generateArc(fromCoord, toCoord, 100);
 
       // Move vehicle to departure airport
       vehicleMarkerRef.current?.setLngLat(fromCoord);
 
-      // Dramatic takeoff sequence: zoom in on airport, then pull back
-      map.current.flyTo({
-        center: fromCoord,
-        zoom: 15,
-        pitch: 70,
-        bearing: getBearing(fromCoord[1], fromCoord[0], toCoord[1], toCoord[0]),
-        duration: 1500,
+      // Zoom in to route area, then run cinematic animation
+      zoomInToRoute(map.current, arcPath, 2500).then(() => {
+        if (!map.current) return;
+
+        activeAnimRef.current = animateRoute(map.current, arcPath, {
+          ...FLIGHT_CONFIG,
+          startBearing: getBearing(fromCoord[1], fromCoord[0], toCoord[1], toCoord[0]),
+        }, {
+          onProgress: (_phase, pos) => {
+            vehicleMarkerRef.current?.setLngLat(pos);
+          },
+          onComplete: () => {
+            // After flight, check if there's an airport-to-hotel drive
+            const hotelRoute = getAirportToHotelRoute(toKey);
+            if (hotelRoute && hotelRoute.length >= 2 && map.current) {
+              if (emojiDiv) emojiDiv.innerHTML = '🚗';
+              soundManager.vroom();
+              activeAnimRef.current = animateRoute(map.current, hotelRoute, SHORT_DRIVE_CONFIG, {
+                onProgress: (_p, pos) => vehicleMarkerRef.current?.setLngLat(pos),
+                onComplete: () => finishTravel(nextLocation, toLoc),
+              });
+            } else {
+              finishTravel(nextLocation, toLoc);
+            }
+          },
+        });
       });
 
-      setTimeout(() => {
-        // Play takeoff sound
-        soundManager.whoosh();
-        animateVehicle(arcPath, 'flight', () => {
-          // After flight, check if there's an airport-to-hotel drive
-          const hotelRoute = getAirportToHotelRoute(toKey);
-          if (hotelRoute && hotelRoute.length >= 2) {
-            // Switch to car
-            if (emojiDiv) emojiDiv.innerHTML = '🚗';
-            soundManager.vroom();
-            animateVehicle(hotelRoute, 'drive', () => {
-              finishTravel(nextLocation, toLoc);
-            });
-          } else {
-            finishTravel(nextLocation, toLoc);
-          }
-        });
-      }, 1700);
-
     } else {
-      // DRIVE
+      soundManager.vroom();
+
+      // DRIVE — use road-following route
       const driveRoute = getDriveRoute(fromKey, toKey);
       const drivePath = driveRoute ? driveRoute.coordinates : [[fromLoc.lng, fromLoc.lat] as [number, number], [toLoc.lng, toLoc.lat] as [number, number]];
+      const isLong = drivePath.length > 100;
 
       addDriveWaypointMarkers(fromKey, toKey);
 
-      const bounds = new mapboxgl.LngLatBounds();
-      drivePath.forEach(c => bounds.extend(c));
-      map.current.fitBounds(bounds, { padding: 80, pitch: 45, duration: 1200 });
+      // Zoom in to the route, then animate
+      if (!map.current) return;
+      zoomInToRoute(map.current, drivePath, 2000).then(() => {
+        if (!map.current) return;
 
-      setTimeout(() => {
-        animateVehicle(drivePath, 'drive', () => {
-          removeWaypointMarkers();
-          finishTravel(nextLocation, toLoc);
+        activeAnimRef.current = animateRoute(map.current, drivePath, isLong ? DRIVE_CONFIG : SHORT_DRIVE_CONFIG, {
+          onProgress: (_phase, pos) => {
+            vehicleMarkerRef.current?.setLngLat(pos);
+          },
+          onComplete: () => {
+            removeWaypointMarkers();
+            finishTravel(nextLocation, toLoc);
+          },
         });
-      }, 1300);
+      });
     }
-  }, [currentLocation, isAnimating, setAnimating, removePOIMarkers, removeWaypointMarkers, addDriveWaypointMarkers, animateVehicle]);
+  }, [currentLocation, isAnimating, setAnimating, removePOIMarkers, removeWaypointMarkers, addDriveWaypointMarkers]);
 
   const finishTravel = useCallback((nextLocation: GameLocation, toLoc: { lng: number; lat: number }) => {
     setAnimating(false);
