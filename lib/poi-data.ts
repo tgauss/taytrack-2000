@@ -301,6 +301,24 @@ export const driveRoutes: Record<string, DriveRouteData> = {
   },
 };
 
+// Tulsa Airport (TUL) to Holiday Inn Express Downtown
+const TUL_AIRPORT_TO_HOTEL: [number, number][] = [
+  [-95.887796,36.199424],[-95.890987,36.199613],[-95.893119,36.199685],[-95.894619,36.201131],[-95.89505,36.201889],[-95.894714,36.207557],[-95.895681,36.208468],[-95.898894,36.208112],[-95.904628,36.207186],[-95.904633,36.20455],[-95.904633,36.202015],[-95.904621,36.195499],[-95.904612,36.191835],[-95.90453,36.188007],[-95.90087,36.187405],[-95.893764,36.186872],[-95.891397,36.185181],[-95.889336,36.182652],[-95.8873,36.179538],[-95.886788,36.177249],[-95.886778,36.172644],[-95.886785,36.165718],[-95.886787,36.160927],[-95.886772,36.157679],[-95.886764,36.153684],[-95.886729,36.146537],[-95.886712,36.142116],[-95.888926,36.140711],[-95.8881,36.141584],
+];
+
+// Real airport coordinates
+export const AIRPORTS: Record<string, { name: string; lngLat: [number, number] }> = {
+  pdx: { name: 'Portland International Airport', lngLat: [-122.5975, 45.5886] },
+  sea: { name: 'Seattle-Tacoma International Airport', lngLat: [-122.3088, 47.4502] },
+  tul: { name: 'Tulsa International Airport', lngLat: [-95.8881, 36.1983] },
+  oma: { name: 'Eppley Airfield', lngLat: [-95.8940, 41.3032] },
+};
+
 export function getDriveRoute(from: string, to: string): DriveRouteData | null {
   return driveRoutes[`${from}-${to}`] || null;
+}
+
+export function getAirportToHotelRoute(cityId: string): [number, number][] | null {
+  if (cityId === 'tulsa') return TUL_AIRPORT_TO_HOTEL;
+  return null;
 }
