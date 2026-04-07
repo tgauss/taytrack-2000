@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, getNextLocation, getSegmentType, type GameLocation } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
 import { getPOIsForCity, getDriveRoute, AIRPORTS, getAirportToHotelRoute, type POI } from '@/lib/poi-data';
-import { animateRoute, zoomInToRoute, FLIGHT_CONFIG, DRIVE_CONFIG, SHORT_DRIVE_CONFIG } from '@/lib/cinematic';
+import { animateRoute, zoomInToRoute, FLIGHT_CONFIG, DRIVE_CONFIG, SHORT_DRIVE_CONFIG, AIRPORT_TO_HOTEL_CONFIG } from '@/lib/cinematic';
 import { ProgressCaterpillar } from './ProgressCaterpillar';
 import { SleepsCounter } from './SleepsCounter';
 
@@ -219,6 +219,37 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
         map.current.addLayer({ id: 'vehicle-trail-line', type: 'line', source: 'vehicle-trail', paint: { 'line-color': '#00d4ff', 'line-width': 3, 'line-opacity': 0.9 } });
       } catch {}
 
+      // 3D airplane model
+      try {
+        map.current.addSource('airplane-model', {
+          type: 'model',
+          models: {
+            plane: {
+              uri: AIRPLANE_MODEL_URI,
+              position: initialCenter,
+              orientation: [0, 0, 0],
+            },
+          },
+        });
+        map.current.addLayer({
+          id: 'airplane-3d',
+          type: 'model',
+          source: 'airplane-model',
+          slot: 'top',
+          paint: {
+            'model-scale': [
+              'interpolate', ['exponential', 0.5], ['zoom'],
+              2.0, ['literal', [80000.0, 80000.0, 80000.0]],
+              14.0, ['literal', [2.0, 2.0, 2.0]],
+            ],
+            'model-type': 'location-indicator',
+            'model-opacity': 1.0,
+          },
+        });
+      } catch (e) {
+        console.warn('[TAYTRACK] 3D model layer not supported:', e);
+      }
+
       // Draw route lines
       try {
         // Flight arcs
@@ -338,9 +369,16 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
 
     const segmentType = getSegmentType(currentLocation, nextLocation) || 'drive';
 
-    // Update vehicle emoji
+    // Update vehicle emoji and 3D model visibility
     const emojiDiv = vehicleMarkerRef.current?.getElement().querySelector('.vehicle-emoji');
     if (emojiDiv) emojiDiv.innerHTML = segmentType === 'flight' ? '✈️' : '🚗';
+
+    // Show/hide 3D airplane model
+    try {
+      if (map.current.getLayer('airplane-3d')) {
+        map.current.setLayoutProperty('airplane-3d', 'visibility', segmentType === 'flight' ? 'visible' : 'none');
+      }
+    } catch {}
 
     setAnimating(true);
     setPhase('traveling');
@@ -374,18 +412,43 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
           ...FLIGHT_CONFIG,
           startBearing: getBearing(fromCoord[1], fromCoord[0], toCoord[1], toCoord[0]),
         }, {
-          onProgress: (_phase, pos) => {
+          onProgress: (phase, pos) => {
             vehicleMarkerRef.current?.setLngLat(pos);
+            // Update 3D airplane model position and orientation
+            try {
+              const modelSource = map.current?.getSource('airplane-model') as any;
+              if (modelSource?.setModels) {
+                const flightAltitude = Math.sin(phase * Math.PI) * 10000; // arc altitude
+                const bearing = getBearing(fromCoord[1], fromCoord[0], toCoord[1], toCoord[0]);
+                modelSource.setModels({
+                  plane: {
+                    uri: AIRPLANE_MODEL_URI,
+                    position: pos,
+                    orientation: [0, 0, bearing + 90],
+                  },
+                });
+                map.current?.setFeatureState(
+                  { source: 'airplane-model', sourceLayer: '', id: 'plane' },
+                  { 'z-elevation': flightAltitude },
+                );
+              }
+            } catch {}
           },
           onComplete: () => {
+            // Hide 3D airplane on landing
+            try { map.current?.setLayoutProperty('airplane-3d', 'visibility', 'none'); } catch {}
             // After flight, check if there's an airport-to-hotel drive
             const hotelRoute = getAirportToHotelRoute(toKey);
             if (hotelRoute && hotelRoute.length >= 2 && map.current) {
               if (emojiDiv) emojiDiv.innerHTML = '🚗';
               soundManager.vroom();
-              activeAnimRef.current = animateRoute(map.current, hotelRoute, SHORT_DRIVE_CONFIG, {
-                onProgress: (_p, pos) => vehicleMarkerRef.current?.setLngLat(pos),
-                onComplete: () => finishTravel(nextLocation, toLoc),
+              // Zoom into the city first, then drive to hotel
+              zoomInToRoute(map.current!, hotelRoute, 1500).then(() => {
+                if (!map.current) return;
+                activeAnimRef.current = animateRoute(map.current, hotelRoute, AIRPORT_TO_HOTEL_CONFIG, {
+                  onProgress: (_p, pos) => vehicleMarkerRef.current?.setLngLat(pos),
+                  onComplete: () => finishTravel(nextLocation, toLoc),
+                });
               });
             } else {
               finishTravel(nextLocation, toLoc);

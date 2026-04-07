@@ -77,11 +77,11 @@ export interface CinematicConfig {
 
 export const FLIGHT_CONFIG: CinematicConfig = {
   duration: 8000,
-  altitude: 4000,
-  pitch: 65,
+  altitude: 2000000, // ~2000km — high enough to see curvature, looks like a real flight
+  pitch: 45,
   startBearing: 0,
-  bearingRotation: 80,
-  lerpFactor: 0.02,
+  bearingRotation: 60,
+  lerpFactor: 0.015,
   revealLine: true,
   lineColor: '#00d4ff',
   lineWidth: 5,
@@ -102,7 +102,18 @@ export const DRIVE_CONFIG: CinematicConfig = {
 export const SHORT_DRIVE_CONFIG: CinematicConfig = {
   ...DRIVE_CONFIG,
   duration: 5000,
-  altitude: 500,
+  altitude: 400,
+  pitch: 75,
+};
+
+export const AIRPORT_TO_HOTEL_CONFIG: CinematicConfig = {
+  ...DRIVE_CONFIG,
+  duration: 6000,
+  altitude: 300,
+  pitch: 78,
+  lerpFactor: 0.04,
+  lineColor: '#4ade80',
+  lineWidth: 6,
 };
 
 // ---- MAIN ANIMATION FUNCTION ----
