@@ -296,20 +296,12 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       antialias: true,
     });
 
-    // Debug: track map events
+    // Track map errors
     map.current.on('error', (e: unknown) => {
       console.error('[TAYTRACK] Map error:', e);
     });
-    map.current.on('style.load', () => {
-      console.log('[TAYTRACK] style.load fired');
-    });
-    map.current.on('load', () => {
-      console.log('[TAYTRACK] load event fired');
-    });
-    console.log('[TAYTRACK] Map created, waiting for load...');
 
     const onMapLoad = () => {
-      console.log('[TAYTRACK] onMapLoad called');
       if (!map.current) return;
       setMapLoaded(true);
 
@@ -560,14 +552,12 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       });
     };
 
-    // Handle both: map already loaded (cached) or will load later
-    console.log('[TAYTRACK] map.loaded():', map.current.loaded(), 'isStyleLoaded:', map.current.isStyleLoaded());
-    if (map.current.loaded()) {
-      console.log('[TAYTRACK] Map already loaded, calling onMapLoad immediately');
+    // Use style.load (fires when style & sources ready) instead of load
+    // (which waits for ALL tiles to render — can hang at high zoom)
+    if (map.current.isStyleLoaded()) {
       onMapLoad();
     } else {
-      console.log('[TAYTRACK] Map not yet loaded, attaching on(load) handler');
-      map.current.on('load', onMapLoad);
+      map.current.on('style.load', onMapLoad);
     }
 
     return () => {
