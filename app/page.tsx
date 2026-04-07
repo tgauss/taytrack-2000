@@ -172,7 +172,7 @@ export default function TayTrack2000() {
                 </h2>
                 <div className="grid gap-3">
                   {[
-                    { date: 'Apr 12', event: 'Dad flies to Tulsa! ✈️', type: 'flight' },
+                    { date: 'Apr 12', event: 'Dad flies from PDX to Tulsa! ✈️', type: 'flight' },
                     { date: 'Apr 13-15', event: 'Main Street Conference 🎭', type: 'conference' },
                     { date: 'Apr 15', event: 'Road trip to Nebraska! 🚗', type: 'drive' },
                     { date: 'Apr 16-18', event: 'Rare Goods Pickup Event 📦', type: 'work' },
