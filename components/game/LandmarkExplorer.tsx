@@ -63,7 +63,7 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 400 }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="absolute right-4 top-20 bottom-24 w-[380px] max-w-[calc(100vw-2rem)] z-40 flex flex-col"
+          className="absolute right-2 top-16 bottom-20 w-[340px] max-w-[calc(100vw-1rem)] z-40 flex flex-col sm:right-4 sm:top-20 sm:bottom-24 sm:w-[380px]"
         >
           <div className="bg-card/95 backdrop-blur-md rounded-3xl shadow-2xl border border-border overflow-hidden flex flex-col h-full">
             {/* Header */}

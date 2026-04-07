@@ -515,16 +515,23 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       // Expose flyBackToCity to parent
       onMapReady?.({
         flyBackToCity: () => {
-          const locKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
-          const loc = LOCATIONS[locKey];
-          if (loc && map.current) {
-            map.current.flyTo({
-              center: [loc.lng, loc.lat],
-              zoom: ARRIVAL_ZOOM,
-              pitch: ARRIVAL_PITCH,
-              bearing: 0,
-              duration: 1500,
-            });
+          // Read current location from the store at call time (not stale closure)
+          try {
+            const state = useGameStore.getState();
+            const locKey = state.currentLocation === 'vancouver-return' ? 'vancouver' : state.currentLocation;
+            const loc = LOCATIONS[locKey];
+            if (loc && map.current) {
+              map.current.flyTo({
+                center: [loc.lng, loc.lat],
+                zoom: ARRIVAL_ZOOM,
+                pitch: ARRIVAL_PITCH,
+                bearing: 0,
+                duration: 1500,
+              });
+            }
+          } catch {
+            // Fallback: zoom out to show all
+            map.current?.flyTo({ center: [-100, 40], zoom: 4, pitch: 30, duration: 1500 });
           }
         },
       });

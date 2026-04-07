@@ -108,6 +108,25 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'taytrack-game-storage',
+      // Migrate old 'portland' state to 'vancouver'
+      migrate: (persistedState: unknown) => {
+        const state = persistedState as Record<string, unknown>;
+        if (state.currentLocation === 'portland') {
+          state.currentLocation = 'vancouver';
+        }
+        if (state.currentLocation === 'portland-return') {
+          state.currentLocation = 'vancouver-return';
+        }
+        if (Array.isArray(state.visitedLocations)) {
+          state.visitedLocations = (state.visitedLocations as string[]).map((loc: string) => {
+            if (loc === 'portland') return 'vancouver';
+            if (loc === 'portland-return') return 'vancouver-return';
+            return loc;
+          });
+        }
+        return state;
+      },
+      version: 1,
     }
   )
 );

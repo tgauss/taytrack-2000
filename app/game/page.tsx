@@ -14,6 +14,7 @@ import { LandmarkExplorer } from '@/components/game/LandmarkExplorer';
 import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore } from '@/lib/game-state';
+import { soundManager } from '@/lib/sounds';
 import type { POI } from '@/lib/poi-data';
 
 const AdventureMap = dynamic(
@@ -30,7 +31,6 @@ const AdventureMap = dynamic(
     ),
   }
 );
-import { soundManager } from '@/lib/sounds';
 
 type ActiveGame = 'packing' | 'memory' | null;
 
