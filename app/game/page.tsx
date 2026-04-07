@@ -11,6 +11,7 @@ import { BadgeCollection } from '@/components/game/BadgeCollection';
 import { SoundToggle } from '@/components/game/SoundToggle';
 import { DailyJournal } from '@/components/game/DailyJournal';
 import { LandmarkExplorer } from '@/components/game/LandmarkExplorer';
+import { CityExplorer } from '@/components/game/CityExplorer';
 import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore } from '@/lib/game-state';
@@ -42,11 +43,14 @@ export default function GamePage() {
   const [showJournal, setShowJournal] = useState(false);
   const [activeGame, setActiveGame] = useState<ActiveGame>(null);
   const [isLandscape, setIsLandscape] = useState(true);
-  const mapControlsRef = useRef<{ flyBackToCity: () => void } | null>(null);
-  const { resetGame, earnedBadges } = useGameStore();
+  const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void } | null>(null);
+  const { resetGame, earnedBadges, currentLocation } = useGameStore();
+  const exploreCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
 
   const handlePOITap = useCallback((poi: POI) => {
     setSelectedPOI(poi);
+    // Fly the map to the POI location
+    mapControlsRef.current?.flyToPOI?.(poi);
   }, []);
 
   const handleClosePOI = useCallback(() => {
@@ -320,6 +324,15 @@ export default function GamePage() {
           <MemoryGame onClose={() => setActiveGame(null)} />
         )}
       </AnimatePresence>
+
+      {/* City Explorer bar — always visible when not traveling */}
+      {!activeGame && (
+        <CityExplorer
+          cityId={exploreCityId}
+          onSelectPOI={handlePOITap}
+          activePOIId={selectedPOI?.id || null}
+        />
+      )}
 
       {/* Landmark Explorer */}
       <LandmarkExplorer poi={selectedPOI} onClose={handleClosePOI} />

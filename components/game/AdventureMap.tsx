@@ -45,7 +45,7 @@ type ExplorationPhase = 'idle' | 'traveling' | 'arrived' | 'exploring' | 'ready'
 interface AdventureMapProps {
   onCityTap: (cityId: string) => void;
   onPOITap?: (poi: POI) => void;
-  onMapReady?: (controls: { flyBackToCity: () => void }) => void;
+  onMapReady?: (controls: { flyBackToCity: () => void; flyToPOI: (poi: POI) => void }) => void;
 }
 
 export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapProps) {
@@ -527,8 +527,21 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       const startCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
       addPOIMarkers(startCityId);
 
-      // Expose flyBackToCity to parent
+      // Expose map controls to parent
       onMapReady?.({
+        flyToPOI: (poi: POI) => {
+          if (!map.current) return;
+          stopOrbit();
+          const zoomTo = poi.zoomLevel || 16.5;
+          map.current.flyTo({
+            center: poi.lngLat,
+            zoom: zoomTo,
+            pitch: 65,
+            bearing: Math.random() * 40 - 20,
+            duration: 1500,
+            curve: 1.2,
+          });
+        },
         flyBackToCity: () => {
           // Read current location from the store at call time (not stale closure)
           try {
