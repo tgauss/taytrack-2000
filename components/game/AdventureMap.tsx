@@ -301,117 +301,127 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       setMapLoaded(true);
 
       // Add 3D terrain
-      map.current.addSource('mapbox-dem', {
-        type: 'raster-dem',
-        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-        tileSize: 512,
-        maxzoom: 14,
-      });
-      map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+      try {
+        map.current.addSource('mapbox-dem', {
+          type: 'raster-dem',
+          url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+          tileSize: 512,
+          maxzoom: 14,
+        });
+        map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+      } catch { /* terrain may already exist */ }
 
       // Add sky
-      map.current.addLayer({
-        id: 'sky',
-        type: 'sky',
-        paint: {
-          'sky-type': 'atmosphere',
-          'sky-atmosphere-sun': [0.0, 90.0],
-          'sky-atmosphere-sun-intensity': 15,
-        },
-      });
-
-      // Add 3D buildings layer
-      const layers = map.current.getStyle().layers;
-      const labelLayerId = layers?.find(
-        (layer) => layer.type === 'symbol' && layer.layout && 'text-field' in layer.layout
-      )?.id;
-
-      map.current.addLayer(
-        {
-          id: '3d-buildings',
-          source: 'composite',
-          'source-layer': 'building',
-          filter: ['==', 'extrude', 'true'],
-          type: 'fill-extrusion',
-          minzoom: 12,
+      try {
+        map.current.addLayer({
+          id: 'sky',
+          type: 'sky',
           paint: {
-            'fill-extrusion-color': [
-              'interpolate', ['linear'], ['get', 'height'],
-              0, '#1a1a3e',
-              50, '#2a2a5e',
-              100, '#3a3a7e',
-              200, '#4a4a9e',
-            ],
-            'fill-extrusion-height': ['get', 'height'],
-            'fill-extrusion-base': ['get', 'min_height'],
-            'fill-extrusion-opacity': 0.85,
+            'sky-type': 'atmosphere',
+            'sky-atmosphere-sun': [0.0, 90.0],
+            'sky-atmosphere-sun-intensity': 15,
           },
-        },
-        labelLayerId
-      );
+        });
+      } catch { /* sky may already exist */ }
+
+      // Add 3D buildings layer (may not be available in all styles)
+      try {
+        const layers = map.current.getStyle().layers;
+        const labelLayerId = layers?.find(
+          (layer) => layer.type === 'symbol' && layer.layout && 'text-field' in layer.layout
+        )?.id;
+
+        map.current.addLayer(
+          {
+            id: '3d-buildings',
+            source: 'composite',
+            'source-layer': 'building',
+            filter: ['==', 'extrude', 'true'],
+            type: 'fill-extrusion',
+            minzoom: 12,
+            paint: {
+              'fill-extrusion-color': [
+                'interpolate', ['linear'], ['get', 'height'],
+                0, '#1a1a3e',
+                50, '#2a2a5e',
+                100, '#3a3a7e',
+                200, '#4a4a9e',
+              ],
+              'fill-extrusion-height': ['get', 'height'],
+              'fill-extrusion-base': ['get', 'min_height'],
+              'fill-extrusion-opacity': 0.85,
+            },
+          },
+          labelLayerId
+        );
+      } catch { /* 3D buildings not available in this style — that's OK */ }
 
       // Add vehicle trail source (empty, filled during animation)
-      map.current.addSource('vehicle-trail', {
-        type: 'geojson',
-        data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } },
-      });
-      map.current.addLayer({
-        id: 'vehicle-trail-glow',
-        type: 'line',
-        source: 'vehicle-trail',
-        paint: { 'line-color': '#00d4ff', 'line-width': 8, 'line-blur': 6, 'line-opacity': 0.5 },
-      });
-      map.current.addLayer({
-        id: 'vehicle-trail-line',
-        type: 'line',
-        source: 'vehicle-trail',
-        paint: { 'line-color': '#00d4ff', 'line-width': 3, 'line-opacity': 0.9 },
-      });
+      try {
+        map.current.addSource('vehicle-trail', {
+          type: 'geojson',
+          data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } },
+        });
+        map.current.addLayer({
+          id: 'vehicle-trail-glow',
+          type: 'line',
+          source: 'vehicle-trail',
+          paint: { 'line-color': '#00d4ff', 'line-width': 8, 'line-blur': 6, 'line-opacity': 0.5 },
+        });
+        map.current.addLayer({
+          id: 'vehicle-trail-line',
+          type: 'line',
+          source: 'vehicle-trail',
+          paint: { 'line-color': '#00d4ff', 'line-width': 3, 'line-opacity': 0.9 },
+        });
+      } catch { /* trail source may fail */ }
 
       // Draw all route lines (faint background)
-      const flightCoords: [number, number][][] = [];
-      const driveCoords: [number, number][][] = [];
+      try {
+        const flightCoords: [number, number][][] = [];
+        const driveCoords: [number, number][][] = [];
 
-      ROUTE_SEGMENTS.forEach(seg => {
-        const fromKey = seg.from === 'vancouver-return' ? 'vancouver' : seg.from;
-        const toKey = seg.to === 'vancouver-return' ? 'vancouver' : seg.to;
-        const from = LOCATIONS[fromKey];
-        const to = LOCATIONS[toKey];
-        if (!from || !to) return;
+        ROUTE_SEGMENTS.forEach(seg => {
+          const fromKey = seg.from === 'vancouver-return' ? 'vancouver' : seg.from;
+          const toKey = seg.to === 'vancouver-return' ? 'vancouver' : seg.to;
+          const from = LOCATIONS[fromKey];
+          const to = LOCATIONS[toKey];
+          if (!from || !to) return;
 
-        if (seg.type === 'flight') {
-          flightCoords.push(generateArc([from.lng, from.lat], [to.lng, to.lat], 50));
-        } else {
-          const driveRoute = getDriveRoute(seg.from, seg.to);
-          driveCoords.push(driveRoute ? driveRoute.coordinates : [[from.lng, from.lat], [to.lng, to.lat]]);
-        }
-      });
+          if (seg.type === 'flight') {
+            flightCoords.push(generateArc([from.lng, from.lat], [to.lng, to.lat], 50));
+          } else {
+            const driveRoute = getDriveRoute(seg.from, seg.to);
+            driveCoords.push(driveRoute ? driveRoute.coordinates : [[from.lng, from.lat], [to.lng, to.lat]]);
+          }
+        });
 
-      flightCoords.forEach((coords, i) => {
-        map.current!.addSource(`flight-route-${i}`, {
-          type: 'geojson',
-          data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } },
+        flightCoords.forEach((coords, i) => {
+          map.current!.addSource(`flight-route-${i}`, {
+            type: 'geojson',
+            data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } },
+          });
+          map.current!.addLayer({
+            id: `flight-route-line-${i}`,
+            type: 'line',
+            source: `flight-route-${i}`,
+            paint: { 'line-color': '#00d4ff', 'line-width': 3, 'line-opacity': 0.3 },
+          });
         });
-        map.current!.addLayer({
-          id: `flight-route-line-${i}`,
-          type: 'line',
-          source: `flight-route-${i}`,
-          paint: { 'line-color': '#00d4ff', 'line-width': 3, 'line-opacity': 0.3 },
-        });
-      });
 
-      driveCoords.forEach((coords, i) => {
-        map.current!.addSource(`drive-route-${i}`, {
-          type: 'geojson',
-          data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } },
+        driveCoords.forEach((coords, i) => {
+          map.current!.addSource(`drive-route-${i}`, {
+            type: 'geojson',
+            data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } },
+          });
+          map.current!.addLayer({
+            id: `drive-route-line-${i}`,
+            type: 'line',
+            source: `drive-route-${i}`,
+            paint: { 'line-color': '#ffd93d', 'line-width': 3, 'line-opacity': 0.3, 'line-dasharray': [2, 1] },
+          });
         });
-        map.current!.addLayer({
-          id: `drive-route-line-${i}`,
-          type: 'line',
-          source: `drive-route-${i}`,
-          paint: { 'line-color': '#ffd93d', 'line-width': 3, 'line-opacity': 0.3, 'line-dasharray': [2, 1] },
-        });
-      });
+      } catch { /* route lines may fail */ }
 
       // Add city markers
       Object.entries(LOCATIONS).forEach(([id, loc]) => {
