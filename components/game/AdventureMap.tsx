@@ -469,7 +469,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
                   plane: {
                     uri: AIRPLANE_MODEL_URI,
                     position: pos,
-                    orientation: [0, pitchAngle, instantBearing],
+                    orientation: [0, pitchAngle, instantBearing + 180],
                   },
                 });
                 map.current?.setFeatureState(
@@ -510,7 +510,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
                         const idx = Math.min(Math.floor(_p * hotelRoute.length), hotelRoute.length - 2);
                         const nextPt = hotelRoute[idx + 1];
                         const bearing = getBearing(pos[1], pos[0], nextPt[1], nextPt[0]);
-                        truckSrc.setModels({ truck: { uri: TRUCK_MODEL_URI, position: pos, orientation: [0, 0, bearing] } });
+                        truckSrc.setModels({ truck: { uri: TRUCK_MODEL_URI, position: pos, orientation: [0, 0, bearing + 180] } });
                       }
                     } catch {}
                   },
@@ -553,7 +553,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
                 const nextPt = drivePath[idx + 1];
                 const bearing = getBearing(pos[1], pos[0], nextPt[1], nextPt[0]);
                 truckSource.setModels({
-                  truck: { uri: TRUCK_MODEL_URI, position: pos, orientation: [0, 0, bearing] },
+                  truck: { uri: TRUCK_MODEL_URI, position: pos, orientation: [0, 0, bearing + 180] },
                 });
               }
             } catch {}
