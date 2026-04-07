@@ -447,14 +447,21 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
             if (hotelRoute && hotelRoute.length >= 2 && map.current) {
               if (emojiDiv) emojiDiv.innerHTML = '🚗';
               soundManager.vroom();
-              // Zoom into the city first, then drive to hotel
-              zoomInToRoute(map.current!, hotelRoute, 1500).then(() => {
+              // Smoothly zoom into the airport area (no globe zoom-out!)
+              map.current.flyTo({
+                center: hotelRoute[0],
+                zoom: 14,
+                pitch: 60,
+                bearing: getBearing(hotelRoute[0][1], hotelRoute[0][0], hotelRoute[Math.min(5, hotelRoute.length-1)][1], hotelRoute[Math.min(5, hotelRoute.length-1)][0]),
+                duration: 2000,
+              });
+              setTimeout(() => {
                 if (!map.current) return;
                 activeAnimRef.current = animateRoute(map.current, hotelRoute, AIRPORT_TO_HOTEL_CONFIG, {
                   onProgress: (_p, pos) => vehicleMarkerRef.current?.setLngLat(pos),
                   onComplete: () => finishTravel(nextLocation, toLoc),
                 });
-              });
+              }, 2200);
             } else {
               finishTravel(nextLocation, toLoc);
             }

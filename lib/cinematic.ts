@@ -109,9 +109,9 @@ export const SHORT_DRIVE_CONFIG: CinematicConfig = {
 export const AIRPORT_TO_HOTEL_CONFIG: CinematicConfig = {
   ...DRIVE_CONFIG,
   duration: 6000,
-  altitude: 300,
-  pitch: 78,
-  lerpFactor: 0.04,
+  altitude: 1500,
+  pitch: 65,
+  lerpFactor: 0.03,
   lineColor: '#4ade80',
   lineWidth: 6,
 };
