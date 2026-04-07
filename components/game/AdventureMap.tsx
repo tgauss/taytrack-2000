@@ -296,7 +296,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       antialias: true,
     });
 
-    map.current.on('load', () => {
+    const onMapLoad = () => {
       if (!map.current) return;
       setMapLoaded(true);
 
@@ -545,7 +545,14 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
           }
         },
       });
-    });
+    };
+
+    // Handle both: map already loaded (cached) or will load later
+    if (map.current.loaded()) {
+      onMapLoad();
+    } else {
+      map.current.on('load', onMapLoad);
+    }
 
     return () => {
       stopOrbit();
