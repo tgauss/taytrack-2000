@@ -373,11 +373,14 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     const emojiDiv = vehicleMarkerRef.current?.getElement().querySelector('.vehicle-emoji');
     if (emojiDiv) emojiDiv.innerHTML = segmentType === 'flight' ? '✈️' : '🚗';
 
-    // Show/hide 3D airplane model
+    // Show/hide 3D airplane model + emoji marker
     try {
       if (map.current.getLayer('airplane-3d')) {
         map.current.setLayoutProperty('airplane-3d', 'visibility', segmentType === 'flight' ? 'visible' : 'none');
       }
+      // Hide emoji marker during flights (3D model takes over), show during drives
+      const vehicleEl = vehicleMarkerRef.current?.getElement();
+      if (vehicleEl) vehicleEl.style.display = segmentType === 'flight' ? 'none' : '';
     } catch {}
 
     setAnimating(true);
@@ -435,8 +438,10 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
             } catch {}
           },
           onComplete: () => {
-            // Hide 3D airplane on landing
+            // Hide 3D airplane on landing, show emoji marker again
             try { map.current?.setLayoutProperty('airplane-3d', 'visibility', 'none'); } catch {}
+            const vEl = vehicleMarkerRef.current?.getElement();
+            if (vEl) vEl.style.display = '';
             // After flight, check if there's an airport-to-hotel drive
             const hotelRoute = getAirportToHotelRoute(toKey);
             if (hotelRoute && hotelRoute.length >= 2 && map.current) {
