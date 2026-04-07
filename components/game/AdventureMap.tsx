@@ -80,6 +80,28 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
 
   // ---- POI MARKER MANAGEMENT ----
 
+  // ---- ORBIT CAMERA (must be defined before addPOIMarkers) ----
+
+  const stopOrbit = useCallback(() => {
+    if (orbitAnimRef.current) {
+      cancelAnimationFrame(orbitAnimRef.current);
+      orbitAnimRef.current = null;
+    }
+  }, []);
+
+  const startOrbit = useCallback(() => {
+    if (!map.current) return;
+    stopOrbit();
+    let bearing = map.current.getBearing();
+    const spin = () => {
+      if (!map.current) return;
+      bearing += 0.15;
+      map.current.easeTo({ bearing, duration: 50, easing: (t) => t });
+      orbitAnimRef.current = requestAnimationFrame(spin);
+    };
+    orbitAnimRef.current = requestAnimationFrame(spin);
+  }, [stopOrbit]);
+
   const removePOIMarkers = useCallback(() => {
     poiMarkersRef.current.forEach(m => m.remove());
     poiMarkersRef.current = [];
@@ -231,28 +253,6 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       waypointMarkersRef.current.push(marker);
     });
   }, [removeWaypointMarkers]);
-
-  // ---- AUTO-ORBIT CAMERA (video game idle feel) ----
-
-  const startOrbit = useCallback(() => {
-    if (!map.current) return;
-    stopOrbit();
-    let bearing = map.current.getBearing();
-    const spin = () => {
-      if (!map.current) return;
-      bearing += 0.15; // slow rotation
-      map.current.easeTo({ bearing, duration: 50, easing: (t) => t });
-      orbitAnimRef.current = requestAnimationFrame(spin);
-    };
-    orbitAnimRef.current = requestAnimationFrame(spin);
-  }, []);
-
-  const stopOrbit = useCallback(() => {
-    if (orbitAnimRef.current) {
-      cancelAnimationFrame(orbitAnimRef.current);
-      orbitAnimRef.current = null;
-    }
-  }, []);
 
   // Start orbit when exploring, stop when traveling
   useEffect(() => {
