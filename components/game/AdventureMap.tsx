@@ -239,11 +239,13 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
           paint: {
             'model-scale': [
               'interpolate', ['exponential', 0.5], ['zoom'],
-              2.0, ['literal', [80000.0, 80000.0, 80000.0]],
-              14.0, ['literal', [2.0, 2.0, 2.0]],
+              2.0, ['literal', [4000.0, 4000.0, 4000.0]],
+              8.0, ['literal', [400.0, 400.0, 400.0]],
+              14.0, ['literal', [5.0, 5.0, 5.0]],
             ],
             'model-type': 'location-indicator',
             'model-opacity': 1.0,
+            'model-translation': [0, 0, ['feature-state', 'z-elevation']],
           },
         });
       } catch (e) {
@@ -421,13 +423,18 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
             try {
               const modelSource = map.current?.getSource('airplane-model') as any;
               if (modelSource?.setModels) {
-                const flightAltitude = Math.sin(phase * Math.PI) * 10000; // arc altitude
-                const bearing = getBearing(fromCoord[1], fromCoord[0], toCoord[1], toCoord[0]);
+                const flightAltitude = Math.sin(phase * Math.PI) * 10000;
+                // Compute instantaneous bearing from current pos to a point slightly ahead on the arc
+                const aheadIdx = Math.min(Math.floor(phase * arcPath.length) + 3, arcPath.length - 1);
+                const aheadPos = arcPath[aheadIdx];
+                const instantBearing = getBearing(pos[1], pos[0], aheadPos[1], aheadPos[0]);
+                // Compute pitch based on climb/descent
+                const pitchAngle = phase < 0.15 ? 15 : phase > 0.85 ? -15 : 0;
                 modelSource.setModels({
                   plane: {
                     uri: AIRPLANE_MODEL_URI,
                     position: pos,
-                    orientation: [0, 0, bearing + 90],
+                    orientation: [0, pitchAngle, instantBearing + 90],
                   },
                 });
                 map.current?.setFeatureState(
