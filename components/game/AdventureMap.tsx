@@ -605,27 +605,33 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     type: 'flight' | 'drive',
     onComplete: () => void
   ) => {
-    if (!vehicleMarkerRef.current || !map.current) return;
+    if (!vehicleMarkerRef.current || !map.current || path.length < 2) {
+      onComplete();
+      return;
+    }
 
     // Duration proportional to path length
     const baseDuration = type === 'flight' ? 3000 : Math.min(6000, Math.max(2000, path.length * 15));
     const startTime = performance.now();
     const trailCoords: [number, number][] = [];
+    const lastIdx = path.length - 1;
 
     // Set trail color
-    const trailColor = type === 'flight' ? '#00d4ff' : '#ffd93d';
-    map.current.setPaintProperty('vehicle-trail-glow', 'line-color', trailColor);
-    map.current.setPaintProperty('vehicle-trail-line', 'line-color', trailColor);
+    try {
+      const trailColor = type === 'flight' ? '#00d4ff' : '#ffd93d';
+      map.current.setPaintProperty('vehicle-trail-glow', 'line-color', trailColor);
+      map.current.setPaintProperty('vehicle-trail-line', 'line-color', trailColor);
+    } catch { /* trail layers may not exist */ }
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / baseDuration, 1);
       const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
 
-      // Interpolate along path
-      const pathIndex = eased * (path.length - 1);
-      const idx = Math.floor(pathIndex);
-      const nextIdx = Math.min(idx + 1, path.length - 1);
+      // Interpolate along path (clamped to valid indices)
+      const pathIndex = eased * lastIdx;
+      const idx = Math.min(Math.floor(pathIndex), lastIdx);
+      const nextIdx = Math.min(idx + 1, lastIdx);
       const t = pathIndex - idx;
       const currentPos: [number, number] = [
         path[idx][0] + (path[nextIdx][0] - path[idx][0]) * t,

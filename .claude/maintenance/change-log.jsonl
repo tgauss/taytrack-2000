@@ -79,3 +79,7 @@
 {"ts":"2026-04-07T03:41:43Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/AdventureMap.tsx","tool":"Edit"}
 {"ts":"2026-04-07T03:44:56Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/CityExplorer.tsx","tool":"Edit"}
 {"ts":"2026-04-07T03:45:06Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/CityExplorer.tsx","tool":"Edit"}
+{"ts":"2026-04-07T04:15:32Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/.env.local","tool":"Write"}
+{"ts":"2026-04-07T04:15:53Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/voice.ts","tool":"Write"}
+{"ts":"2026-04-07T04:16:42Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/LandmarkExplorer.tsx","tool":"Write"}
+{"ts":"2026-04-07T04:20:55Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/AdventureMap.tsx","tool":"Edit"}
