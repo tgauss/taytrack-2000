@@ -94,9 +94,23 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
   }, [stopOrbit]);
 
   // ---- POI MARKERS ----
+  // Track POI lngLats for viewport culling
+  const poiLngLatsRef = useRef<Map<mapboxgl.Marker, [number, number]>>(new Map());
+
+  const cullPOIMarkers = useCallback(() => {
+    if (!map.current) return;
+    const bounds = map.current.getBounds();
+    poiLngLatsRef.current.forEach((lngLat, marker) => {
+      const inView = bounds.contains(lngLat);
+      const el = marker.getElement();
+      if (el) el.style.display = inView ? '' : 'none';
+    });
+  }, []);
+
   const removePOIMarkers = useCallback(() => {
     poiMarkersRef.current.forEach(m => m.remove());
     poiMarkersRef.current = [];
+    poiLngLatsRef.current.clear();
   }, []);
 
   const removeWaypointMarkers = useCallback(() => {
@@ -127,8 +141,11 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       el.addEventListener('mouseleave', () => { const ic = el.querySelector('.poi-icon') as HTMLElement; if(ic){ic.style.transform='scale(1)';ic.style.boxShadow=`0 0 12px ${poi.color}66`;} });
       const marker = new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat(poi.lngLat).addTo(map.current!);
       poiMarkersRef.current.push(marker);
+      poiLngLatsRef.current.set(marker, poi.lngLat);
     });
-  }, [removePOIMarkers, onPOITap, stopOrbit]);
+    // Initial cull + attach listener
+    cullPOIMarkers();
+  }, [removePOIMarkers, onPOITap, stopOrbit, cullPOIMarkers]);
 
   const addDriveWaypointMarkers = useCallback((from: string, to: string) => {
     if (!map.current) return;
@@ -147,6 +164,13 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       waypointMarkersRef.current.push(new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat(wp.lngLat).setPopup(popup).addTo(map.current!));
     });
   }, [removeWaypointMarkers]);
+
+  // Cull POI markers when map moves (hide off-screen ones)
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    map.current.on('move', cullPOIMarkers);
+    return () => { map.current?.off('move', cullPOIMarkers); };
+  }, [mapLoaded, cullPOIMarkers]);
 
   // Orbit start/stop on phase change
   useEffect(() => {
