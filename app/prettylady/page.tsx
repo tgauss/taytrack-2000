@@ -11,9 +11,9 @@ const TRIP_DAYS = [
   { date: '2026-04-13', label: 'Mon, Apr 13', title: 'Conference Day 1', color: '#f97316' },
   { date: '2026-04-14', label: 'Tue, Apr 14', title: 'Conference Day 2', color: '#f97316' },
   { date: '2026-04-15', label: 'Wed, Apr 15', title: 'Conference + Drive', color: '#eab308' },
-  { date: '2026-04-16', label: 'Thu, Apr 16', title: 'Packing + Pickup Night', color: '#a855f7' },
-  { date: '2026-04-17', label: 'Fri, Apr 17', title: 'THE BIG DAY', color: '#ef4444' },
-  { date: '2026-04-18', label: 'Sat, Apr 18', title: 'Final Pickup Day', color: '#a855f7' },
+  { date: '2026-04-16', label: 'Thu, Apr 16', title: 'Packing + Pickup Night ⚡', color: '#a855f7' },
+  { date: '2026-04-17', label: 'Fri, Apr 17', title: 'THE BIG DAY 🔥', color: '#ef4444' },
+  { date: '2026-04-18', label: 'Sat, Apr 18', title: 'Final Pickup Day ⚡', color: '#a855f7' },
   { date: '2026-04-19', label: 'Sun, Apr 19', title: 'Coming Home!', color: '#4ade80' },
 ];
 
@@ -36,14 +36,14 @@ const HOTELS = [
 
 const FLIGHTS = [
   { dir: 'Outbound', date: 'Sunday, April 12', legs: [
-    { route: 'PDX → SEA', flight: 'Alaska AS 2048', departs: '7:18 AM', arrives: '' },
-    { route: 'Layover', flight: '', departs: '', arrives: '1h 47m in Seattle' },
-    { route: 'SEA → TUL', flight: 'Alaska AS 2350', departs: '', arrives: '4:03 PM' },
+    { route: 'PDX → SEA', flight: 'Alaska AS 2048', flightNum: 'AS2048', departs: '7:18 AM', arrives: '', dateCode: '2026-04-12' },
+    { route: 'Layover', flight: '', flightNum: '', departs: '', arrives: '1h 47m in Seattle', dateCode: '' },
+    { route: 'SEA → TUL', flight: 'Alaska AS 2350', flightNum: 'AS2350', departs: '', arrives: '4:03 PM', dateCode: '2026-04-12' },
   ]},
   { dir: 'Return', date: 'Sunday, April 19', legs: [
-    { route: 'OMA → SEA', flight: 'Alaska AS 312', departs: '2:17 PM', arrives: '' },
-    { route: 'Layover', flight: '', departs: '', arrives: '3h 29m in Seattle' },
-    { route: 'SEA → PDX', flight: 'Alaska AS 2007', departs: '', arrives: '8:25 PM' },
+    { route: 'OMA → SEA', flight: 'Alaska AS 312', flightNum: 'AS312', departs: '2:17 PM', arrives: '', dateCode: '2026-04-19' },
+    { route: 'Layover', flight: '', flightNum: '', departs: '', arrives: '3h 29m in Seattle', dateCode: '' },
+    { route: 'SEA → PDX', flight: 'Alaska AS 2007', flightNum: 'AS2007', departs: '', arrives: '8:25 PM', dateCode: '2026-04-19' },
   ]},
 ];
 
@@ -263,17 +263,29 @@ export default function PrettyLadyPage() {
                   </div>
                   <div className="space-y-2">
                     {flight.legs.map((leg, li) => (
-                      <div key={li} className={`flex items-center justify-between py-2 ${li > 0 ? 'border-t border-white/5' : ''}`}>
-                        <div>
-                          <div className="font-mono text-sm font-semibold" style={{ color: leg.route === 'Layover' ? '#fbbf24' : '#60a5fa' }}>
-                            {leg.route}
+                      <div key={li} className={`py-2 ${li > 0 ? 'border-t border-white/5' : ''}`}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-mono text-sm font-semibold" style={{ color: leg.route === 'Layover' ? '#fbbf24' : '#60a5fa' }}>
+                              {leg.route}
+                            </div>
+                            {leg.flight && <div className="text-xs text-white/40">{leg.flight}</div>}
                           </div>
-                          {leg.flight && <div className="text-xs text-white/40">{leg.flight}</div>}
+                          <div className="text-right">
+                            {leg.departs && <div className="text-sm font-mono">{leg.departs}</div>}
+                            {leg.arrives && <div className="text-xs text-white/40">{leg.arrives}</div>}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          {leg.departs && <div className="text-sm font-mono">{leg.departs}</div>}
-                          {leg.arrives && <div className="text-xs text-white/40">{leg.arrives}</div>}
-                        </div>
+                        {leg.flightNum && (
+                          <a
+                            href={`https://www.flightaware.com/live/flight/${leg.flightNum}/history/${leg.dateCode.replace(/-/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 flex items-center justify-center gap-1.5 w-full py-2 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/20 rounded-lg text-xs text-blue-400 font-medium transition-colors"
+                          >
+                            📡 Track Live Flight
+                          </a>
+                        )}
                       </div>
                     ))}
                   </div>
