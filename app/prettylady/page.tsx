@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tripEvents } from '@/lib/trip-data';
 import Link from 'next/link';
@@ -36,14 +36,14 @@ const HOTELS = [
 
 const FLIGHTS = [
   { dir: 'Outbound', date: 'Sunday, April 12', legs: [
-    { route: 'PDX → SEA', flight: 'Alaska AS 2048', flightNum: 'AS2048', departs: '7:18 AM', arrives: '', dateCode: '2026-04-12' },
-    { route: 'Layover', flight: '', flightNum: '', departs: '', arrives: '1h 47m in Seattle', dateCode: '' },
-    { route: 'SEA → TUL', flight: 'Alaska AS 2350', flightNum: 'AS2350', departs: '', arrives: '4:03 PM', dateCode: '2026-04-12' },
+    { route: 'PDX → SEA', flight: 'Alaska 2048', flightNum: 'AS2048', departs: '7:18 AM', arrives: '8:18 AM', duration: '1hr', dateCode: '2026-04-12' },
+    { route: 'Layover in Seattle', flight: '', flightNum: '', departs: '', arrives: '1h 47m', duration: '', dateCode: '' },
+    { route: 'SEA → TUL', flight: 'Alaska 2350', flightNum: 'AS2350', departs: '10:05 AM', arrives: '4:03 PM CT', duration: '3hr 58min', dateCode: '2026-04-12' },
   ]},
   { dir: 'Return', date: 'Sunday, April 19', legs: [
-    { route: 'OMA → SEA', flight: 'Alaska AS 312', flightNum: 'AS312', departs: '2:17 PM', arrives: '', dateCode: '2026-04-19' },
-    { route: 'Layover', flight: '', flightNum: '', departs: '', arrives: '3h 29m in Seattle', dateCode: '' },
-    { route: 'SEA → PDX', flight: 'Alaska AS 2007', flightNum: 'AS2007', departs: '', arrives: '8:25 PM', dateCode: '2026-04-19' },
+    { route: 'OMA → SEA', flight: 'Alaska 312', flightNum: 'AS312', departs: '2:17 PM CT', arrives: '4:01 PM PT', duration: '3hr 44min', dateCode: '2026-04-19' },
+    { route: 'Layover in Seattle', flight: '', flightNum: '', departs: '', arrives: '3h 29m', duration: '', dateCode: '' },
+    { route: 'SEA → PDX', flight: 'Alaska 2007', flightNum: 'AS2007', departs: '7:30 PM', arrives: '8:25 PM', duration: '55min', dateCode: '2026-04-19' },
   ]},
 ];
 
@@ -61,13 +61,112 @@ function getDaysUntilDeparture(): number {
   return Math.ceil((depart.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+// "Happening Now" status engine — returns what Taylor is doing based on timeline
+function getHappeningNow(): { status: string; detail: string; location: string; timezone: string; availability: string } | null {
+  const now = new Date();
+  const tripStart = new Date('2026-04-12T07:18:00');
+  const tripEnd = new Date('2026-04-19T20:25:00');
+
+  if (now < tripStart) return null; // trip hasn't started
+  if (now > tripEnd) return null; // trip is over
+
+  const dateStr = now.toISOString().split('T')[0];
+  const hour = now.getHours();
+
+  // Location & timezone by date
+  let location = 'Vancouver, WA';
+  let timezone = 'Pacific (same as home)';
+  if (dateStr >= '2026-04-12' && dateStr <= '2026-04-15' && !(dateStr === '2026-04-15' && hour >= 16)) {
+    location = 'Tulsa, Oklahoma';
+    timezone = 'Central (1 hour ahead)';
+  } else if (dateStr === '2026-04-15' && hour >= 16) {
+    location = 'Driving through Kansas';
+    timezone = 'Central (1 hour ahead)';
+  } else if (dateStr >= '2026-04-16' && dateStr <= '2026-04-18') {
+    location = 'Lincoln / Roca, Nebraska';
+    timezone = 'Central (1 hour ahead)';
+  } else if (dateStr === '2026-04-19') {
+    location = hour < 14 ? 'Omaha, Nebraska' : 'Flying home!';
+    timezone = hour < 14 ? 'Central (1 hour ahead)' : 'In the air!';
+  }
+
+  // What's happening now based on date + time
+  let status = '';
+  let detail = '';
+  let availability = '';
+
+  if (dateStr === '2026-04-12') {
+    if (hour < 7) { status = 'Getting ready to leave'; detail = 'Flight at 7:18 AM from PDX'; availability = '✅ Available to text'; }
+    else if (hour < 16) { status = 'In the air / traveling'; detail = 'PDX → Seattle → Tulsa'; availability = '✈️ Limited — on a plane'; }
+    else if (hour < 18) { status = 'Checking into hotel'; detail = 'Holiday Inn Express, Tulsa'; availability = '✅ Free to call!'; }
+    else { status = 'Welcome reception'; detail = 'Conference networking event'; availability = '📱 Can text, might be slow'; }
+  } else if (dateStr >= '2026-04-13' && dateStr <= '2026-04-14') {
+    if (hour < 8) { status = 'Sleeping / getting ready'; detail = 'Holiday Inn Express, Tulsa'; availability = '✅ Free to call!'; }
+    else if (hour < 17) { status = 'At the conference'; detail = 'Main Street Now Conference sessions'; availability = '📱 Can text between sessions'; }
+    else { status = 'Free for the evening'; detail = 'Done with sessions for today'; availability = '✅ Free to FaceTime!'; }
+  } else if (dateStr === '2026-04-15') {
+    if (hour < 8) { status = 'Getting ready'; detail = 'Last day of conference'; availability = '✅ Free to call!'; }
+    else if (hour < 16) { status = 'Final conference sessions'; detail = 'Closing celebration at 4:15 PM'; availability = '📱 Can text between sessions'; }
+    else if (hour < 22) { status = 'Driving to Nebraska!'; detail = '~6 hours through Kansas'; availability = '📱 Can talk hands-free'; }
+    else { status = 'Arriving in Lincoln'; detail = 'Checking into Hyatt Place'; availability = '✅ Free to call!'; }
+  } else if (dateStr === '2026-04-16') {
+    if (hour < 8) { status = 'Sleeping / getting ready'; detail = 'Hyatt Place, Lincoln'; availability = '✅ Free to call!'; }
+    else if (hour < 17) { status = 'Packing boxes at warehouse'; detail = 'Roca, NE — prepping 180 shipping orders'; availability = '📱 Can text, hands might be full'; }
+    else if (hour < 20) { status = 'Pickup event — Day 1'; detail = '~75 customers picking up orders'; availability = '🔥 Super busy — text only'; }
+    else { status = 'Wrapping up for the night'; detail = 'Back at hotel soon'; availability = '✅ Free to call!'; }
+  } else if (dateStr === '2026-04-17') {
+    if (hour < 8) { status = 'Sleeping / getting ready'; detail = 'Hyatt Place, Lincoln'; availability = '✅ Free to call!'; }
+    else if (hour < 10) { status = 'Heading to warehouse'; detail = 'Big day — 10 hours of pickups'; availability = '✅ Available'; }
+    else if (hour < 20) { status = 'Pickup event — Day 2'; detail = '~75 pickups, busiest day!'; availability = '🔥 Super busy — text only'; }
+    else { status = 'Done! Exhausted but happy'; detail = 'Heading back to hotel'; availability = '✅ Free to FaceTime!'; }
+  } else if (dateStr === '2026-04-18') {
+    if (hour < 8) { status = 'Sleeping / getting ready'; detail = 'Hyatt Place, Lincoln'; availability = '✅ Free to call!'; }
+    else if (hour < 10) { status = 'Heading to warehouse'; detail = 'Final pickup day'; availability = '✅ Available'; }
+    else if (hour < 19) { status = 'Pickup event — Day 3'; detail = '~75 pickups, last day!'; availability = '🔥 Busy — text only'; }
+    else { status = 'Cleaning up & heading to Omaha'; detail = 'Driving to Omaha for tomorrow\'s flight'; availability = '📱 Can talk hands-free'; }
+  } else if (dateStr === '2026-04-19') {
+    if (hour < 10) { status = 'Morning in Omaha'; detail = 'Getting ready for the flight home'; availability = '✅ Free to call!'; }
+    else if (hour < 14) { status = 'Heading to the airport'; detail = 'Eppley Airfield, Omaha'; availability = '✅ Available'; }
+    else if (hour < 21) { status = 'Flying home!'; detail = 'OMA → Seattle → PDX'; availability = '✈️ Limited — on a plane'; }
+    else { status = 'HOME!'; detail = 'Finally back! 💕'; availability = '🏠 Right here with you!'; }
+  }
+
+  return { status, detail, location, timezone, availability };
+}
+
+// Emergency contacts
+const EMERGENCY_CONTACTS = [
+  { name: 'Holiday Inn Express Tulsa', phone: '(918) 728-2444', note: 'Apr 12-15' },
+  { name: 'Hyatt Place Lincoln', phone: '(402) 742-6000', note: 'Apr 15-19' },
+  { name: 'Arvest Convention Center', phone: '(918) 894-4350', note: 'Conference venue' },
+  { name: 'Tulsa Intl Airport (TUL)', phone: '(918) 838-5000', note: '' },
+  { name: 'Eppley Airfield (OMA)', phone: '(402) 661-8017', note: '' },
+  { name: 'Alaska Airlines', phone: '1-800-252-7522', note: 'Reservations' },
+];
+
 type DetailView = 'schedule' | 'flights' | 'hotels' | 'contacts';
 
 export default function PrettyLadyPage() {
   const [activeDay, setActiveDay] = useState<string | null>(null);
   const [detailView, setDetailView] = useState<DetailView>('schedule');
+  const [now, setNow] = useState(new Date());
   const daysHome = getDaysUntilHome();
   const daysDeparture = getDaysUntilDeparture();
+  const happeningNow = getHappeningNow();
+
+  // Update "now" every minute for live status
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Get time in Central timezone (where Taylor will be most of the trip)
+  const centralTime = now.toLocaleTimeString('en-US', {
+    timeZone: 'America/Chicago',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
 
   const dayEvents = activeDay ? tripEvents.filter(e => e.date === activeDay) : [];
   const activeDayInfo = TRIP_DAYS.find(d => d.date === activeDay);
@@ -102,6 +201,42 @@ export default function PrettyLadyPage() {
           </h2>
           <p className="text-white/50 text-sm">Tulsa → Lincoln → Roca → Omaha</p>
         </section>
+
+        {/* ===== HAPPENING NOW CARD ===== */}
+        {happeningNow && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="bg-gradient-to-r from-blue-500/15 to-purple-500/15 border border-white/10 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-xs uppercase tracking-widest text-white/40">Right Now</span>
+              </div>
+
+              <h3 className="text-lg font-bold mb-1">{happeningNow.status}</h3>
+              <p className="text-sm text-white/50 mb-3">{happeningNow.detail}</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/5 rounded-lg p-2.5">
+                  <div className="text-[10px] text-white/30 uppercase mb-0.5">Location</div>
+                  <div className="text-xs font-medium">{happeningNow.location}</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-2.5">
+                  <div className="text-[10px] text-white/30 uppercase mb-0.5">His Time</div>
+                  <div className="text-xs font-medium">{centralTime}</div>
+                  <div className="text-[10px] text-white/30">{happeningNow.timezone}</div>
+                </div>
+              </div>
+
+              <div className="mt-3 bg-white/5 rounded-lg p-2.5">
+                <div className="text-[10px] text-white/30 uppercase mb-0.5">Can I reach him?</div>
+                <div className="text-sm font-medium">{happeningNow.availability}</div>
+              </div>
+            </div>
+          </motion.section>
+        )}
 
         {/* Quick nav */}
         <div className="grid grid-cols-4 gap-2 mb-6">
@@ -263,19 +398,28 @@ export default function PrettyLadyPage() {
                   </div>
                   <div className="space-y-2">
                     {flight.legs.map((leg, li) => (
-                      <div key={li} className={`py-2 ${li > 0 ? 'border-t border-white/5' : ''}`}>
-                        <div className="flex items-center justify-between">
+                      <div key={li} className={`py-3 ${li > 0 ? 'border-t border-white/5' : ''}`}>
+                        <div className="flex items-center justify-between mb-1">
                           <div>
-                            <div className="font-mono text-sm font-semibold" style={{ color: leg.route === 'Layover' ? '#fbbf24' : '#60a5fa' }}>
+                            <div className="font-mono text-sm font-semibold" style={{ color: leg.route.includes('Layover') ? '#fbbf24' : '#60a5fa' }}>
                               {leg.route}
                             </div>
                             {leg.flight && <div className="text-xs text-white/40">{leg.flight}</div>}
                           </div>
-                          <div className="text-right">
-                            {leg.departs && <div className="text-sm font-mono">{leg.departs}</div>}
-                            {leg.arrives && <div className="text-xs text-white/40">{leg.arrives}</div>}
-                          </div>
+                          {leg.duration && (
+                            <span className="text-[11px] bg-white/10 px-2 py-0.5 rounded-full text-white/50">{leg.duration}</span>
+                          )}
                         </div>
+                        {(leg.departs || leg.arrives) && !leg.route.includes('Layover') && (
+                          <div className="flex items-center gap-3 text-xs text-white/50 mb-1">
+                            {leg.departs && <span>Departs <span className="text-white/80 font-mono">{leg.departs}</span></span>}
+                            {leg.departs && leg.arrives && <span className="text-white/20">→</span>}
+                            {leg.arrives && <span>Arrives <span className="text-white/80 font-mono">{leg.arrives}</span></span>}
+                          </div>
+                        )}
+                        {leg.route.includes('Layover') && (
+                          <div className="text-xs text-yellow-400/60">{leg.arrives} layover</div>
+                        )}
                         {leg.flightNum && (
                           <a
                             href={`https://www.flightaware.com/live/flight/${leg.flightNum}/history/${leg.dateCode.replace(/-/g, '')}`}
@@ -331,23 +475,51 @@ export default function PrettyLadyPage() {
         {detailView === 'contacts' && !activeDay && (
           <section>
             <h3 className="text-xs uppercase tracking-widest text-white/40 mb-3 px-1">Reach Me</h3>
-            <div className="bg-white/5 rounded-xl p-6 text-center">
-              <p className="text-4xl mb-4">💕</p>
-              <p className="text-sm text-white/60 mb-4">
+            <div className="bg-white/5 rounded-xl p-5 text-center mb-4">
+              <p className="text-3xl mb-3">💕</p>
+              <p className="text-sm text-white/60 mb-3">
                 I&apos;ll have my phone the whole trip. Call or text anytime!
               </p>
-              <div className="bg-white/5 rounded-xl p-4 mb-4">
-                <p className="text-xs text-white/40 mb-1">Best times to call</p>
-                <p className="font-semibold">Mornings &amp; Evenings</p>
-                <p className="text-xs text-white/30 mt-1">
-                  May be in sessions or with customers during the day
-                </p>
+              {happeningNow && (
+                <div className="bg-white/5 rounded-xl p-3 mb-3">
+                  <p className="text-xs text-white/40 mb-0.5">Right now</p>
+                  <p className="text-sm font-semibold">{happeningNow.availability}</p>
+                </div>
+              )}
+              <div className="bg-white/5 rounded-xl p-3">
+                <p className="text-xs text-white/40 mb-0.5">Best times to call</p>
+                <p className="font-semibold text-sm">Before 8am &amp; after 6pm his time</p>
               </div>
-              <div className="bg-pink-500/10 border border-pink-500/20 rounded-xl p-4">
-                <p className="text-sm text-pink-300">
-                  Miss you already. See you April 19th. 💕
-                </p>
-              </div>
+            </div>
+
+            <h3 className="text-xs uppercase tracking-widest text-white/40 mb-3 px-1">Emergency Contacts</h3>
+            <div className="space-y-2">
+              {EMERGENCY_CONTACTS.map((contact, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="bg-white/5 rounded-xl p-3 flex items-center justify-between"
+                >
+                  <div>
+                    <div className="text-sm font-medium">{contact.name}</div>
+                    {contact.note && <div className="text-[11px] text-white/30">{contact.note}</div>}
+                  </div>
+                  <a
+                    href={`tel:${contact.phone.replace(/[^\d+]/g, '')}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/15 hover:bg-green-500/25 border border-green-500/20 rounded-lg text-xs text-green-400 font-medium transition-colors whitespace-nowrap"
+                  >
+                    📞 {contact.phone}
+                  </a>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="mt-4 bg-pink-500/10 border border-pink-500/20 rounded-xl p-4 text-center">
+              <p className="text-sm text-pink-300">
+                Miss you already. See you April 19th. 💕
+              </p>
             </div>
           </section>
         )}
