@@ -99,6 +99,30 @@ export default function TayTrack2000() {
           </div>
         </Link>
 
+        {/* Amanda View Banner */}
+        <Link href="/prettylady">
+          <div className="mb-6 bg-gradient-to-r from-pink-500 via-rose-400 to-pink-500 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-shadow cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center text-3xl">
+                  💕
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">
+                    Amanda View
+                  </h2>
+                  <p className="text-sm text-white/80">
+                    Trip schedule, flights, hotels &amp; live status
+                  </p>
+                </div>
+              </div>
+              <div className="text-3xl group-hover:scale-125 transition-transform">
+                →
+              </div>
+            </div>
+          </div>
+        </Link>
+
         {/* Countdown timers */}
         <section className="mb-8">
           <div className="grid md:grid-cols-2 gap-4">
