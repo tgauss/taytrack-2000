@@ -11,9 +11,9 @@ const TRIP_DAYS = [
   { date: '2026-04-13', label: 'Mon, Apr 13', title: 'Conference Day 1', color: '#f97316' },
   { date: '2026-04-14', label: 'Tue, Apr 14', title: 'Conference Day 2', color: '#f97316' },
   { date: '2026-04-15', label: 'Wed, Apr 15', title: 'Conference + Drive', color: '#eab308' },
-  { date: '2026-04-16', label: 'Thu, Apr 16', title: 'Packing + Pickup Night ⚡', color: '#a855f7' },
-  { date: '2026-04-17', label: 'Fri, Apr 17', title: 'THE BIG DAY 🔥', color: '#ef4444' },
-  { date: '2026-04-18', label: 'Sat, Apr 18', title: 'Final Pickup Day ⚡', color: '#a855f7' },
+  { date: '2026-04-16', label: 'Thu, Apr 16', title: 'Pickup Day 1 — ~75 pickups 🔥', color: '#ef4444' },
+  { date: '2026-04-17', label: 'Fri, Apr 17', title: 'Pickup Day 2 — ~75 pickups 🔥', color: '#ef4444' },
+  { date: '2026-04-18', label: 'Sat, Apr 18', title: 'Pickup Day 3 — ~75 pickups 🔥', color: '#ef4444' },
   { date: '2026-04-19', label: 'Sun, Apr 19', title: 'Coming Home!', color: '#4ade80' },
 ];
 
