@@ -20,71 +20,77 @@ export function CityExplorer({ cityId, onSelectPOI, activePOIId }: CityExplorerP
     <AnimatePresence>
       <motion.div
         key={cityId}
-        initial={{ opacity: 0, y: 60 }}
+        initial={{ opacity: 0, y: 80 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 60 }}
+        exit={{ opacity: 0, y: 80 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200, delay: 0.3 }}
-        className="absolute bottom-[190px] left-4 right-4 z-30"
+        className="absolute bottom-[110px] left-3 right-3 z-30"
       >
-        <div className="bg-card/90 backdrop-blur-md rounded-2xl border border-border shadow-2xl p-3">
+        <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
           {/* Header */}
-          <div className="text-center mb-2">
-            <span className="text-xs font-bold text-primary uppercase tracking-wider">
-              Tap to explore!
-            </span>
+          <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <motion.span
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-xl"
+              >
+                🔍
+              </motion.span>
+              <span className="text-sm font-bold text-white/80">
+                Explore this city!
+              </span>
+            </div>
+            <span className="text-xs text-white/30">{pois.length} places</span>
           </div>
 
-          {/* Scrollable landmark cards */}
-          <div className="flex gap-3 overflow-x-auto pb-1 px-1 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {/* Scrollable cards — bigger for iPad fingers */}
+          <div
+            className="flex gap-2.5 overflow-x-auto px-3 pb-3 snap-x snap-mandatory"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
             {pois.map((poi, i) => {
               const isActive = activePOIId === poi.id;
               return (
                 <motion.button
                   key={poi.id}
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 + i * 0.1 }}
-                  onClick={() => {
-                    soundManager.tap();
-                    onSelectPOI(poi);
-                  }}
-                  className={`flex-shrink-0 snap-center rounded-2xl overflow-hidden flex flex-col items-center transition-all touch-manipulation ${
-                    isActive
-                      ? 'ring-2 ring-offset-2 ring-offset-card'
-                      : 'hover:scale-105'
-                  }`}
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 0.35 + i * 0.06 }}
+                  onClick={() => { soundManager.tap(); onSelectPOI(poi); }}
+                  className="flex-shrink-0 snap-center rounded-xl overflow-hidden touch-manipulation transition-all active:scale-95"
                   style={{
+                    width: '130px',
+                    minWidth: '130px',
                     background: isActive
-                      ? `linear-gradient(135deg, ${poi.color}44, ${poi.color}22)`
-                      : 'rgba(255,255,255,0.05)',
-                    width: '110px',
-                    minWidth: '110px',
-                    borderColor: isActive ? poi.color : 'rgba(255,255,255,0.1)',
-                    borderWidth: '2px',
-                    borderStyle: 'solid',
+                      ? `linear-gradient(135deg, ${poi.color}30, ${poi.color}15)`
+                      : 'rgba(255,255,255,0.04)',
+                    border: `2px solid ${isActive ? poi.color : 'rgba(255,255,255,0.08)'}`,
+                    boxShadow: isActive ? `0 0 16px ${poi.color}33` : 'none',
                   }}
-                  whileTap={{ scale: 0.92 }}
                 >
-                  {/* Satellite thumbnail */}
+                  {/* Image thumbnail */}
                   {poi.imageUrl && (
-                    <div className="w-full h-16 overflow-hidden">
-                      <img src={poi.imageUrl} alt={poi.name} className="w-full h-full object-cover" />
+                    <div className="w-full h-[60px] overflow-hidden relative">
+                      <img src={poi.imageUrl} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <span className="absolute bottom-1 right-1 text-xl drop-shadow-lg">{poi.emoji}</span>
                     </div>
                   )}
-                  <div className="p-2 flex flex-col items-center gap-1">
-                    <motion.span
-                      className="text-2xl"
-                      animate={isActive ? { scale: [1, 1.2, 1] } : {}}
-                      transition={{ duration: 1, repeat: Infinity }}
-                    >
-                      {poi.emoji}
-                    </motion.span>
-                    <span
-                      className="text-[10px] font-bold leading-tight text-center line-clamp-2"
-                      style={{ color: poi.color }}
+                  {!poi.imageUrl && (
+                    <div className="w-full h-[60px] flex items-center justify-center bg-white/5">
+                      <span className="text-3xl">{poi.emoji}</span>
+                    </div>
+                  )}
+
+                  {/* Label */}
+                  <div className="px-2 py-2">
+                    <p
+                      className="text-[11px] font-bold leading-tight text-center line-clamp-2"
+                      style={{ color: isActive ? poi.color : 'rgba(255,255,255,0.7)' }}
                     >
                       {poi.name}
-                    </span>
+                    </p>
                   </div>
                 </motion.button>
               );

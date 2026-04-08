@@ -151,3 +151,5 @@
 {"ts":"2026-04-08T16:29:08Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/public/icon.svg","tool":"Write"}
 {"ts":"2026-04-08T16:29:24Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/layout.tsx","tool":"Edit"}
 {"ts":"2026-04-08T17:20:03Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/lib/poi-data.ts","tool":"Edit"}
+{"ts":"2026-04-08T17:34:36Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/LandmarkExplorer.tsx","tool":"Write"}
+{"ts":"2026-04-08T17:34:56Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/components/game/CityExplorer.tsx","tool":"Write"}
