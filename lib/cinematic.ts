@@ -324,6 +324,24 @@ export function animateRoute(
  * Zoom in from globe/high altitude to a specific route area.
  * Returns a promise that resolves when the zoom-in is complete.
  */
+/**
+ * Wait for the map to finish loading all visible tiles.
+ * Resolves immediately if already idle, otherwise waits up to maxWait ms.
+ */
+function waitForMapIdle(map: mapboxgl.Map, maxWait = 5000): Promise<void> {
+  return new Promise((resolve) => {
+    if (!map.isMoving() && map.areTilesLoaded()) {
+      resolve();
+      return;
+    }
+    const timeout = setTimeout(resolve, maxWait); // Don't wait forever
+    map.once('idle', () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
+}
+
 export function zoomInToRoute(
   map: mapboxgl.Map,
   routeCoords: [number, number][],
@@ -357,7 +375,11 @@ export function zoomInToRoute(
           duration: duration * 0.7,
         },
       );
-      setTimeout(resolve, duration * 0.7 + 200);
+      // Wait for camera to arrive, THEN wait for tiles to load
+      setTimeout(async () => {
+        await waitForMapIdle(map, 5000);
+        resolve();
+      }, duration * 0.7 + 200);
     }, duration * 0.3 + 200);
   });
 }
