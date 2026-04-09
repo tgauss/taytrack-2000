@@ -61,6 +61,10 @@ export default function GamePage() {
   const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void; flyToCity?: (cityId: string) => void } | null>(null);
   const { resetGame, earnedBadges, currentLocation, isMuted, moveToLocation } = useGameStore();
   const exploreCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
+  const [isDemo, setIsDemo] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('demo=true')) setIsDemo(true);
+  }, []);
   const dadMessageCount = useNewMessages();
   // Show intro only when starting fresh at vancouver (not when resuming mid-trip)
   useEffect(() => {
@@ -154,7 +158,7 @@ export default function GamePage() {
         onCityTap={handleCityTap}
         onPOITap={handlePOITap}
         onMapReady={(controls) => { mapControlsRef.current = controls; }}
-        hideGoButton={voPlaying || showIntro}
+        hideGoButton={(!isDemo && voPlaying) || showIntro}
       />
 
       {/* ===== INTRO SCREEN ===== */}
