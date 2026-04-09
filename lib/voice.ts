@@ -21,6 +21,18 @@ const LOCAL_AUDIO: Record<string, string> = {
   'drive-roca-omaha': '/audio/drive-roca-omaha.mp3',
   'flight-omaha-home': '/audio/flight-omaha-home.mp3',
 
+  // Send Dad a Hug
+  'hug-1': '/audio/hug-1.mp3',
+  'hug-2': '/audio/hug-2.mp3',
+  'hug-3': '/audio/hug-3.mp3',
+
+  // Pre-trip countdown
+  'countdown-4': '/audio/countdown-4.mp3',
+  'countdown-3': '/audio/countdown-3.mp3',
+  'countdown-2': '/audio/countdown-2.mp3',
+  'countdown-1': '/audio/countdown-1.mp3',
+  'countdown-today': '/audio/countdown-today.mp3',
+
   // Dad's Story journal
   'journal-locked': '/audio/journal-locked.mp3',
   'journal-day1': '/audio/journal-day1.mp3',

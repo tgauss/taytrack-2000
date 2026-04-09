@@ -10,9 +10,12 @@ import { BadgeCollection } from '@/components/game/BadgeCollection';
 import { DailyJournal } from '@/components/game/DailyJournal';
 import { LandmarkExplorer } from '@/components/game/LandmarkExplorer';
 import { CityExplorer } from '@/components/game/CityExplorer';
+import { ArrivalCelebration } from '@/components/game/ArrivalCelebration';
+import { SendHug } from '@/components/game/SendHug';
+import { PreTripCountdown } from '@/components/game/PreTripCountdown';
 import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
-import { useGameStore } from '@/lib/game-state';
+import { useGameStore, type GameLocation } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
 import { speakText, stopElevenLabsSpeech, playArrivalAudio, playLocalAudio } from '@/lib/voice';
 import type { POI } from '@/lib/poi-data';
@@ -45,8 +48,9 @@ export default function GamePage() {
   const [showIntro, setShowIntro] = useState(false);
   const [voPlaying, setVOPlaying] = useState(false);
   const [isLandscape, setIsLandscape] = useState(true);
-  const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void } | null>(null);
-  const { resetGame, earnedBadges, currentLocation, isMuted } = useGameStore();
+  const [celebrationCity, setCelebrationCity] = useState<{ name: string; emoji: string } | null>(null);
+  const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void; flyToCity?: (cityId: string) => void } | null>(null);
+  const { resetGame, earnedBadges, currentLocation, isMuted, moveToLocation } = useGameStore();
   const exploreCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
   // Show intro only when starting fresh at vancouver (not when resuming mid-trip)
   useEffect(() => {
@@ -66,16 +70,35 @@ export default function GamePage() {
     mapControlsRef.current?.flyBackToCity();
   }, []);
 
-  // Proactive narration when arriving at a city (pre-generated audio)
+  const CITY_EMOJIS: Record<string, string> = {
+    seattle: '☕', tulsa: '🤠', lincoln: '🌽', roca: '📦', omaha: '✈️', 'vancouver-return': '🏠',
+  };
+  const CITY_NAMES: Record<string, string> = {
+    seattle: 'Seattle', tulsa: 'Tulsa', lincoln: 'Lincoln', roca: 'Roca', omaha: 'Omaha', 'vancouver-return': 'Home',
+  };
+
+  // Celebration + narration when arriving at a city
   useEffect(() => {
     if (currentLocation === 'vancouver' || isMuted) return;
     const cityKey = currentLocation === 'vancouver-return' ? 'home' : currentLocation;
+
+    // Trigger celebration
+    setCelebrationCity({ name: CITY_NAMES[currentLocation] || '', emoji: CITY_EMOJIS[currentLocation] || '🎉' });
+    setTimeout(() => setCelebrationCity(null), 3500);
+
+    // Play arrival narration
     setVOPlaying(true);
     const timer = setTimeout(() => {
       playArrivalAudio(cityKey, undefined, () => setVOPlaying(false));
     }, 3500);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocation, isMuted]);
+
+  // Handle caterpillar city tap — fly to that city
+  const handleCaterpillarTap = useCallback((cityId: GameLocation) => {
+    mapControlsRef.current?.flyToCity?.(cityId);
+  }, []);
 
   useEffect(() => {
     const checkOrientation = () => setIsLandscape(window.innerWidth > window.innerHeight);
@@ -351,6 +374,15 @@ export default function GamePage() {
 
       {/* Landmark Explorer */}
       <LandmarkExplorer poi={selectedPOI} onClose={handleClosePOI} />
+
+      {/* Send Dad a Hug */}
+      {!activeGame && !showIntro && <SendHug />}
+
+      {/* Arrival Celebration */}
+      <ArrivalCelebration cityName={celebrationCity?.name || null} cityEmoji={celebrationCity?.emoji} />
+
+      {/* Pre-trip Countdown (shows before Apr 12) */}
+      <PreTripCountdown />
 
       {/* Achievement Popup */}
       <AchievementPopup />

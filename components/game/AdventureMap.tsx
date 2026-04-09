@@ -18,12 +18,12 @@ mapboxgl.accessToken = 'pk.eyJ1IjoidGdhdXNzIiwiYSI6ImUxelFyZWsifQ.ewANL0BvfdZa9R
 const AIRPLANE_MODEL_URI = 'https://static.poly.pizza/b91d675e-8ebc-46e1-b739-80f5daba8515.glb'; // "Very Cute Airplane" by Akash Rudra
 const TRUCK_MODEL_URI = 'https://static.poly.pizza/4e925a01-dbb8-4aab-848b-221306b835ea.glb'; // "Pickup Truck" by Quaternius (CC0)
 
-// City centers for ground exploration
-const LOCATIONS: Record<string, { name: string; lng: number; lat: number; emoji: string; color: string }> = {
+// City centers — landmarkLng/Lat is where the camera should target on arrival
+const LOCATIONS: Record<string, { name: string; lng: number; lat: number; emoji: string; color: string; landmarkLng?: number; landmarkLat?: number }> = {
   vancouver: { name: 'Vancouver', lng: -122.6587, lat: 45.6387, emoji: '🏠', color: '#4ade80' },
-  seattle: { name: 'Seattle', lng: -122.3321, lat: 47.6062, emoji: '☕', color: '#60a5fa' },
-  tulsa: { name: 'Tulsa', lng: -95.9928, lat: 36.1540, emoji: '🤠', color: '#f97316' },
-  lincoln: { name: 'Lincoln', lng: -96.6852, lat: 40.8136, emoji: '🌽', color: '#eab308' },
+  seattle: { name: 'Seattle', lng: -122.3321, lat: 47.6062, emoji: '☕', color: '#60a5fa', landmarkLng: -122.3493, landmarkLat: 47.6205 }, // Space Needle area
+  tulsa: { name: 'Tulsa', lng: -95.9928, lat: 36.1540, emoji: '🤠', color: '#f97316', landmarkLng: -95.9214, landmarkLat: 36.1289 }, // Golden Driller
+  lincoln: { name: 'Lincoln', lng: -96.6852, lat: 40.8136, emoji: '🌽', color: '#eab308', landmarkLng: -96.6996, landmarkLat: 40.8088 }, // State Capitol
   roca: { name: 'Roca', lng: -96.6653, lat: 40.6481, emoji: '📦', color: '#a855f7' },
   omaha: { name: 'Omaha', lng: -95.9345, lat: 41.2565, emoji: '✈️', color: '#ec4899' },
   'vancouver-return': { name: 'Home!', lng: -122.6587, lat: 45.6387, emoji: '🎉', color: '#4ade80' },
@@ -46,7 +46,7 @@ type ExplorationPhase = 'idle' | 'traveling' | 'arrived' | 'exploring' | 'ready'
 interface AdventureMapProps {
   onCityTap: (cityId: string) => void;
   onPOITap?: (poi: POI) => void;
-  onMapReady?: (controls: { flyBackToCity: () => void; flyToPOI: (poi: POI) => void }) => void;
+  onMapReady?: (controls: { flyBackToCity: () => void; flyToPOI: (poi: POI) => void; flyToCity: (cityId: string) => void }) => void;
   hideGoButton?: boolean;
 }
 
@@ -334,8 +334,15 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
             const state = useGameStore.getState();
             const locKey = state.currentLocation === 'vancouver-return' ? 'vancouver' : state.currentLocation;
             const loc = LOCATIONS[locKey];
-            if (loc && map.current) map.current.flyTo({ center: [loc.lng, loc.lat], zoom: ARRIVAL_ZOOM, pitch: ARRIVAL_PITCH, bearing: 0, duration: 1500 });
+            if (loc && map.current) map.current.flyTo({ center: [loc.landmarkLng || loc.lng, loc.landmarkLat || loc.lat], zoom: ARRIVAL_ZOOM, pitch: ARRIVAL_PITCH, bearing: 0, duration: 1500 });
           } catch { map.current?.flyTo({ center: [-100, 40], zoom: 4, pitch: 30, duration: 1500 }); }
+        },
+        flyToCity: (cityId: string) => {
+          const loc = LOCATIONS[cityId === 'vancouver-return' ? 'vancouver' : cityId];
+          if (loc && map.current) {
+            stopOrbit();
+            map.current.flyTo({ center: [loc.landmarkLng || loc.lng, loc.landmarkLat || loc.lat], zoom: ARRIVAL_ZOOM, pitch: ARRIVAL_PITCH, bearing: Math.random() * 40 - 20, duration: 2000 });
+          }
         },
       });
     };
@@ -565,8 +572,12 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
     const cityName = LOCATIONS[nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation]?.name || '';
     setWelcomeCity(cityName);
 
+    // Smart arrival camera — target main landmark if available
+    const locData = LOCATIONS[nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation];
+    const arrivalLng = locData?.landmarkLng || toLoc.lng;
+    const arrivalLat = locData?.landmarkLat || toLoc.lat;
     const arrivalBearing = Math.random() * 60 - 30;
-    map.current?.flyTo({ center: [toLoc.lng, toLoc.lat], zoom: ARRIVAL_ZOOM, pitch: ARRIVAL_PITCH, bearing: arrivalBearing, duration: 2500, curve: 1.5 });
+    map.current?.flyTo({ center: [arrivalLng, arrivalLat], zoom: ARRIVAL_ZOOM, pitch: ARRIVAL_PITCH, bearing: arrivalBearing, duration: 2500, curve: 1.5 });
 
     setTimeout(() => {
       setPhase('exploring');
@@ -700,7 +711,13 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         )}
       </AnimatePresence>
 
-      <ProgressCaterpillar />
+      <ProgressCaterpillar onCityTap={(cityId) => {
+        const loc = LOCATIONS[cityId === 'vancouver-return' ? 'vancouver' : cityId];
+        if (loc && map.current) {
+          stopOrbit();
+          map.current.flyTo({ center: [loc.landmarkLng || loc.lng, loc.landmarkLat || loc.lat], zoom: ARRIVAL_ZOOM, pitch: ARRIVAL_PITCH, bearing: Math.random() * 40 - 20, duration: 2000 });
+        }
+      }} />
 
       {/* Route key removed — too cluttered for kids */}
     </div>
