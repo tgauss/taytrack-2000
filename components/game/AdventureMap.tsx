@@ -200,6 +200,11 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       map.current.resize();
       setMapLoaded(true);
 
+      // Dark theme for Standard style — keeps 3D buildings
+      try {
+        map.current.setConfigProperty('basemap', 'lightPreset', 'dark');
+      } catch {}
+
       // Add 3D terrain (skip on mobile — can cause GPU issues)
       const isMobileDevice = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
       if (!isMobileDevice) {
@@ -208,11 +213,6 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
           map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
         } catch {}
       }
-
-      // Add sky
-      try {
-        map.current.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
-      } catch {}
 
       // 3D buildings are built into Standard style — no manual layer needed
 
