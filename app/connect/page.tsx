@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { LiveSky } from '@/components/game/LiveSky';
+
+const MAX_MESSAGES_PER_SESSION = 20;
+const SESSION_KEY = 'taytrack-msg-count';
 
 interface Reaction {
   emoji: string;
@@ -47,6 +51,19 @@ export default function ConnectPage() {
   const [recording, setRecording] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [tapbackTarget, setTapbackTarget] = useState<string | null>(null);
+  const [msgCount, setMsgCount] = useState(0);
+  const atLimit = msgCount >= MAX_MESSAGES_PER_SESSION;
+
+  // Track message count per session
+  useEffect(() => {
+    const stored = sessionStorage.getItem(SESSION_KEY);
+    if (stored) setMsgCount(parseInt(stored, 10));
+  }, []);
+  const incrementMsgCount = () => {
+    const next = msgCount + 1;
+    setMsgCount(next);
+    sessionStorage.setItem(SESSION_KEY, String(next));
+  };
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   const handleLongPressStart = (timestamp: string) => {
@@ -92,6 +109,7 @@ export default function ConnectPage() {
   }, [messages]);
 
   const sendMessage = async (text: string, imageBase64?: string, audioBase64?: string) => {
+    if (atLimit) return;
     setSending(true);
     try {
       await fetch('/api/slack/send', {
@@ -99,6 +117,7 @@ export default function ConnectPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, imageBase64, audioBase64, senderName: 'The Kids 💕' }),
       });
+      incrementMsgCount();
       setSent(true);
       setTimeout(() => setSent(false), 2000);
       fetchMessages();
@@ -164,7 +183,9 @@ export default function ConnectPage() {
   const stopRecording = () => { mediaRecorderRef.current?.stop(); setRecording(false); };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 to-indigo-950 text-white flex flex-col">
+    <main className="min-h-screen text-white flex flex-col relative">
+      {/* Live sky background */}
+      <LiveSky />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-lg border-b border-white/10 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between">
@@ -338,8 +359,15 @@ export default function ConnectPage() {
           </div>
         )}
 
+        {/* Rate limit message */}
+        {atLimit && (
+          <div className="px-4 py-3 bg-amber-500/10 border-t border-amber-500/20 text-center">
+            <p className="text-sm text-amber-400">You&apos;ve sent lots of messages! 💕 Take a break and come back later.</p>
+          </div>
+        )}
+
         {/* Bottom input area */}
-        {!cameraActive && !recording && !sending && (
+        {!cameraActive && !recording && !sending && !atLimit && (
           <div className="border-t border-white/10 bg-slate-950/90 backdrop-blur-lg p-3 space-y-3">
             {/* Quick messages row */}
             <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>

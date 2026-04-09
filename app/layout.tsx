@@ -16,7 +16,12 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: 'TayTrack 2000 - Dad\'s Epic Adventure Tracker',
   description: 'Track Dad\'s work trip from Vancouver, WA to Tulsa, Lincoln, and Omaha!',
-  generator: 'v0.app',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'TayTrack',
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32' },

@@ -21,6 +21,11 @@ const LOCAL_AUDIO: Record<string, string> = {
   'drive-roca-omaha': '/audio/drive-roca-omaha.mp3',
   'flight-omaha-home': '/audio/flight-omaha-home.mp3',
 
+  // Good Night Dad
+  'goodnight-1': '/audio/goodnight-1.mp3',
+  'goodnight-2': '/audio/goodnight-2.mp3',
+  'goodnight-3': '/audio/goodnight-3.mp3',
+
   // Send Dad a Hug
   'hug-1': '/audio/hug-1.mp3',
   'hug-2': '/audio/hug-2.mp3',

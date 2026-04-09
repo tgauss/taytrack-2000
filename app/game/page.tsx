@@ -14,6 +14,7 @@ import { ArrivalCelebration } from '@/components/game/ArrivalCelebration';
 import { SendHug } from '@/components/game/SendHug';
 import { PreTripCountdown } from '@/components/game/PreTripCountdown';
 import { KiddoConnect, useNewMessages } from '@/components/game/KiddoConnect';
+import { GoodNight } from '@/components/game/GoodNight';
 import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore, type GameLocation } from '@/lib/game-state';
@@ -37,7 +38,7 @@ const AdventureMap = dynamic(
 );
 
 type ActiveGame = 'packing' | 'memory' | null;
-type MenuPanel = 'none' | 'menu' | 'badges' | 'journal' | 'games' | 'connect';
+type MenuPanel = 'none' | 'menu' | 'badges' | 'journal' | 'games' | 'connect' | 'goodnight';
 
 // Arrival narrations are now pre-generated audio files in /public/audio/
 
@@ -303,6 +304,13 @@ export default function GamePage() {
                 <span className="font-bold text-sm text-foreground">{isMuted ? 'Sound On' : 'Sound Off'}</span>
               </button>
               <button
+                onClick={() => { soundManager.tap(); setMenuPanel('none'); setMenuPanel('goodnight'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 touch-manipulation text-left"
+              >
+                <span className="text-2xl">🌙</span>
+                <span className="font-bold text-sm text-foreground">Good Night Dad</span>
+              </button>
+              <button
                 onClick={() => { setMenuPanel('none'); handleReset(); }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 touch-manipulation text-left"
               >
@@ -395,6 +403,9 @@ export default function GamePage() {
 
       {/* Kiddo Connect — messaging */}
       <KiddoConnect isOpen={menuPanel === 'connect'} onClose={() => setMenuPanel('none')} />
+
+      {/* Good Night Dad */}
+      <GoodNight isOpen={menuPanel === 'goodnight'} onClose={() => setMenuPanel('none')} />
 
       {/* Send Dad a Hug */}
       {!activeGame && !showIntro && <SendHug />}

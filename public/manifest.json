@@ -1,0 +1,27 @@
+{
+  "name": "TayTrack 2000 - Dad's Adventure",
+  "short_name": "TayTrack",
+  "description": "Follow Dad's big adventure with games, stories, and fun facts!",
+  "start_url": "/game",
+  "display": "standalone",
+  "background_color": "#0f0f1e",
+  "theme_color": "#0f0f1e",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-light-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}
