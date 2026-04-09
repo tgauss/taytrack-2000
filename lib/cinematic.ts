@@ -99,11 +99,11 @@ export const SEGMENT_DURATIONS: Record<string, number> = {
 
 export const DRIVE_CONFIG: CinematicConfig = {
   duration: 10000,
-  altitude: 800,
-  pitch: 72,
+  altitude: 1200,
+  pitch: 60,
   startBearing: 0,
   bearingRotation: 0, // bearing follows the road
-  lerpFactor: 0.03,
+  lerpFactor: 0.012, // Very smooth position tracking
   revealLine: true,
   lineColor: '#ffd93d',
   lineWidth: 5,
@@ -112,16 +112,16 @@ export const DRIVE_CONFIG: CinematicConfig = {
 export const SHORT_DRIVE_CONFIG: CinematicConfig = {
   ...DRIVE_CONFIG,
   duration: 5000,
-  altitude: 400,
-  pitch: 75,
+  altitude: 800,
+  pitch: 55,
 };
 
 export const AIRPORT_TO_HOTEL_CONFIG: CinematicConfig = {
   ...DRIVE_CONFIG,
   duration: 6000,
-  altitude: 1500,
-  pitch: 65,
-  lerpFactor: 0.03,
+  altitude: 1000,
+  pitch: 55,
+  lerpFactor: 0.015,
   lineColor: '#4ade80',
   lineWidth: 6,
 };
@@ -205,6 +205,7 @@ export function animateRoute(
   let startTime: number | null = null;
   let smoothLng = startPt[0];
   let smoothLat = startPt[1];
+  let smoothBearing = startBearing;
 
   const frame = (currentTime: number) => {
     if (cancelled) return;
@@ -235,44 +236,58 @@ export function animateRoute(
     }
 
     // Calculate bearing
-    let currentBearing: number;
+    let targetBearing: number;
     if (config.bearingRotation === 0) {
-      // Follow-the-road mode: bearing matches travel direction
-      const lookAheadPhase = Math.min(phase + 0.02, 1);
+      // Follow-the-road mode: look far ahead to get a stable bearing
+      const lookAheadPhase = Math.min(phase + 0.08, 1); // Look 8% ahead (was 2%)
       const lookAheadPt = turf.along(routeLine, pathDistance * lookAheadPhase, { units: 'kilometers' });
       const [laLng, laLat] = lookAheadPt.geometry.coordinates;
-      currentBearing = turf.bearing(turf.point([smoothLng, smoothLat]), turf.point([laLng, laLat]));
+      targetBearing = turf.bearing(turf.point([lng, lat]), turf.point([laLng, laLat]));
     } else {
-      // Cinematic rotation mode
-      currentBearing = startBearing - phase * config.bearingRotation;
+      // Cinematic rotation mode (flights)
+      targetBearing = startBearing - phase * config.bearingRotation;
     }
 
-    // Compute camera position
-    const cameraPos = computeCameraPosition(
-      config.pitch,
-      currentBearing,
-      smoothLng,
-      smoothLat,
-      config.altitude,
-    );
+    // Heavily smooth the bearing to prevent jitter on curvy roads
+    const bearingLerp = config.bearingRotation === 0 ? 0.015 : 0.05;
+    // Handle bearing wrap-around (e.g., 350° → 10°)
+    let bearingDiff = targetBearing - smoothBearing;
+    if (bearingDiff > 180) bearingDiff -= 360;
+    if (bearingDiff < -180) bearingDiff += 360;
+    smoothBearing = smoothBearing + bearingDiff * bearingLerp;
 
-    // Apply Free Camera
-    try {
-      const camera = map.getFreeCameraOptions();
-      camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
-        { lng: cameraPos.lng, lat: cameraPos.lat },
-        config.altitude,
-      );
-      camera.lookAtPoint({ lng: smoothLng, lat: smoothLat });
-      map.setFreeCameraOptions(camera);
-    } catch {
-      // Fallback to easeTo if Free Camera not available
+    // For drives: use easeTo with long duration for buttery smooth camera
+    // For flights: use Free Camera for precise control
+    if (config.bearingRotation === 0) {
+      // DRIVE MODE: gentle easeTo, no Free Camera jitter
       map.easeTo({
         center: [smoothLng, smoothLat],
-        bearing: currentBearing,
+        bearing: smoothBearing,
         pitch: config.pitch,
-        duration: 50,
+        zoom: map.getZoom(), // Keep current zoom
+        duration: 300, // Smooth 300ms transitions
+        easing: (t) => t, // Linear
       });
+    } else {
+      // FLIGHT MODE: Free Camera for cinematic control
+      const cameraPos = computeCameraPosition(
+        config.pitch,
+        smoothBearing,
+        smoothLng,
+        smoothLat,
+        config.altitude,
+      );
+      try {
+        const camera = map.getFreeCameraOptions();
+        camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
+          { lng: cameraPos.lng, lat: cameraPos.lat },
+          config.altitude,
+        );
+        camera.lookAtPoint({ lng: smoothLng, lat: smoothLat });
+        map.setFreeCameraOptions(camera);
+      } catch {
+        map.easeTo({ center: [smoothLng, smoothLat], bearing: smoothBearing, pitch: config.pitch, duration: 100 });
+      }
     }
 
     // Notify progress

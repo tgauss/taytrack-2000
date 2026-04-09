@@ -62,16 +62,16 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
           >
             <div className="bg-slate-900 rounded-t-[28px] flex flex-col overflow-hidden border-t border-white/10 shadow-2xl">
 
-              {/* Hero image — big and beautiful */}
+              {/* Hero image — full, no cropping */}
               <div className="relative">
                 {poi.imageUrl && (
-                  <div className="w-full h-56 overflow-hidden">
+                  <div className="w-full bg-slate-800">
                     <img
                       src={poi.imageUrl}
                       alt={poi.name}
-                      className="w-full h-full object-cover"
+                      className="w-full max-h-[35vh] object-contain"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 to-transparent" />
                   </div>
                 )}
 
