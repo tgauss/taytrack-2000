@@ -6,7 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, getNextLocation, getSegmentType, type GameLocation } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
-import { getPOIsForCity, getDriveRoute, AIRPORTS, getAirportToHotelRoute, type POI } from '@/lib/poi-data';
+import { getDriveRoute, AIRPORTS, getAirportToHotelRoute, type POI } from '@/lib/poi-data';
 import { animateRoute, zoomInToRoute, FLIGHT_CONFIG, DRIVE_CONFIG, SHORT_DRIVE_CONFIG, AIRPORT_TO_HOTEL_CONFIG } from '@/lib/cinematic';
 import { ProgressCaterpillar } from './ProgressCaterpillar';
 import { SleepsCounter } from './SleepsCounter';
@@ -53,7 +53,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
   const vehicleMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const poiMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  // poiMarkersRef removed — CityExplorer bar handles POIs
   const waypointMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const mapInitialized = useRef(false);
   const orbitAnimRef = useRef<number | null>(null);
@@ -93,59 +93,13 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     orbitAnimRef.current = requestAnimationFrame(spin);
   }, [stopOrbit]);
 
-  // ---- POI MARKERS ----
-  // Track POI lngLats for viewport culling
-  const poiLngLatsRef = useRef<Map<mapboxgl.Marker, [number, number]>>(new Map());
-
-  const cullPOIMarkers = useCallback(() => {
-    if (!map.current) return;
-    const bounds = map.current.getBounds();
-    poiLngLatsRef.current.forEach((lngLat, marker) => {
-      const inView = bounds.contains(lngLat);
-      const el = marker.getElement();
-      if (el) el.style.display = inView ? '' : 'none';
-    });
-  }, []);
-
-  const removePOIMarkers = useCallback(() => {
-    poiMarkersRef.current.forEach(m => m.remove());
-    poiMarkersRef.current = [];
-    poiLngLatsRef.current.clear();
-  }, []);
+  // POI markers removed — CityExplorer bar handles all POI interaction now.
+  // Map pins were unreliable (clustering at edges, viewport culling issues).
 
   const removeWaypointMarkers = useCallback(() => {
     waypointMarkersRef.current.forEach(m => m.remove());
     waypointMarkersRef.current = [];
   }, []);
-
-  const addPOIMarkers = useCallback((cityId: string) => {
-    if (!map.current) return;
-    removePOIMarkers();
-    const pois = getPOIsForCity(cityId);
-    pois.forEach((poi, i) => {
-      const el = document.createElement('div');
-      el.className = 'poi-marker';
-      el.style.cssText = `cursor:pointer;opacity:0;animation:poiFadeIn 0.3s ease forwards;animation-delay:${i*0.15}s;`;
-      el.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <div class="poi-icon" style="width:48px;height:48px;background:rgba(0,0,0,0.8);border:3px solid ${poi.color};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 12px ${poi.color}66,0 2px 8px rgba(0,0,0,0.5);transition:transform 0.2s,box-shadow 0.2s;">${poi.emoji}</div>
-          <div style="background:rgba(0,0,0,0.85);color:${poi.color};padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;white-space:nowrap;border:1px solid ${poi.color}44;">${poi.name}</div>
-        </div>`;
-      el.addEventListener('click', () => {
-        soundManager.tap();
-        stopOrbit();
-        map.current?.flyTo({ center: poi.lngLat, zoom: poi.zoomLevel || 16.5, pitch: 65, bearing: Math.random()*40-20, duration: 1500 });
-        onPOITap?.(poi);
-      });
-      el.addEventListener('mouseenter', () => { const ic = el.querySelector('.poi-icon') as HTMLElement; if(ic){ic.style.transform='scale(1.25)';ic.style.boxShadow=`0 0 20px ${poi.color}aa`;} });
-      el.addEventListener('mouseleave', () => { const ic = el.querySelector('.poi-icon') as HTMLElement; if(ic){ic.style.transform='scale(1)';ic.style.boxShadow=`0 0 12px ${poi.color}66`;} });
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat(poi.lngLat).addTo(map.current!);
-      poiMarkersRef.current.push(marker);
-      poiLngLatsRef.current.set(marker, poi.lngLat);
-    });
-    // Initial cull + attach listener
-    cullPOIMarkers();
-  }, [removePOIMarkers, onPOITap, stopOrbit, cullPOIMarkers]);
 
   const addDriveWaypointMarkers = useCallback((from: string, to: string) => {
     if (!map.current) return;
@@ -164,13 +118,6 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       waypointMarkersRef.current.push(new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat(wp.lngLat).setPopup(popup).addTo(map.current!));
     });
   }, [removeWaypointMarkers]);
-
-  // Cull POI markers when map moves (hide off-screen ones)
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-    map.current.on('move', cullPOIMarkers);
-    return () => { map.current?.off('move', cullPOIMarkers); };
-  }, [mapLoaded, cullPOIMarkers]);
 
   // Orbit start/stop on phase change
   useEffect(() => {
@@ -371,9 +318,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       `;
       document.head.appendChild(style);
 
-      // Show POIs
-      const startCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
-      addPOIMarkers(startCityId);
+      // POIs handled by CityExplorer bar — no map pins needed
 
       // Expose controls
       onMapReady?.({
@@ -446,7 +391,6 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
 
     setAnimating(true);
     setPhase('traveling');
-    removePOIMarkers();
     removeWaypointMarkers();
 
     const fromKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
@@ -590,7 +534,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
         });
       });
     }
-  }, [currentLocation, isAnimating, setAnimating, removePOIMarkers, removeWaypointMarkers, addDriveWaypointMarkers]);
+  }, [currentLocation, isAnimating, setAnimating, removeWaypointMarkers, addDriveWaypointMarkers]);
 
   const finishTravel = useCallback((nextLocation: GameLocation, toLoc: { lng: number; lat: number }) => {
     setAnimating(false);
@@ -613,13 +557,11 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     setTimeout(() => {
       setPhase('exploring');
       setWelcomeCity(null);
-      const cityId = nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation;
-      addPOIMarkers(cityId);
     }, 3000);
 
     setTimeout(() => setPhase('ready'), 6000);
     awardAchievements(nextLocation);
-  }, [moveToLocation, setAnimating, addPOIMarkers]);
+  }, [moveToLocation, setAnimating]);
 
   const awardAchievements = (location: GameLocation) => {
     if (location === 'seattle') { earnBadge('wheels-up'); earnBadge('coffee-break'); setTimeout(() => showAchievement('wheels-up'), 500); }
