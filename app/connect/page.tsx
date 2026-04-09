@@ -166,30 +166,41 @@ export default function ConnectPage() {
               animate={{ opacity: 1, y: 0 }}
               className={`flex ${msg.fromKids ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[85%] rounded-2xl p-4 ${
+              <div className={`max-w-[75%] ${
                 msg.fromKids
-                  ? 'bg-cyan-500/15 border border-cyan-500/20'
-                  : 'bg-purple-500/10 border border-purple-500/20'
+                  ? 'bg-green-500 rounded-2xl rounded-br-md'
+                  : 'bg-white/10 rounded-2xl rounded-bl-md'
               }`}>
-                <div className="flex items-start gap-2">
-                  <span className="text-lg">{msg.fromKids ? '👧' : '👨'}</span>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-white/40 mb-1">{msg.fromKids ? 'You' : 'Dad'}</p>
-                    {msg.text && <p className="text-base text-white/85 leading-relaxed">{msg.text}</p>}
-                    {msg.hasImage && msg.imageUrl && (
-                      <img src={msg.imageUrl} alt="" className="mt-2 rounded-xl max-h-52 object-cover w-full" />
-                    )}
-                    {msg.hasAudio && <p className="text-sm text-cyan-400 mt-1">🎤 Voice message</p>}
-                    <p className="text-xs text-white/20 mt-2">{msg.time}</p>
+                {/* Image */}
+                {msg.hasImage && msg.imageUrl && (
+                  <div className="p-1">
+                    <img src={msg.imageUrl} alt="" className="rounded-xl max-h-56 object-cover w-full" />
                   </div>
+                )}
+
+                {/* Text */}
+                <div className="px-4 py-2.5">
+                  {msg.text && (
+                    <p className={`text-[15px] leading-relaxed ${msg.fromKids ? 'text-white' : 'text-white/90'}`}>
+                      {msg.text}
+                    </p>
+                  )}
+                  {msg.hasAudio && !msg.text && <p className="text-sm">🎤 Voice message</p>}
+                  <p className={`text-[11px] mt-1 ${msg.fromKids ? 'text-white/50' : 'text-white/25'}`}>
+                    {msg.time}
+                  </p>
                 </div>
+
+                {/* Read aloud — only for Dad's messages */}
                 {msg.fromDad && msg.text && (
-                  <button
-                    onClick={() => readAloud(msg.text)}
-                    className="mt-2 w-full py-3 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/25 rounded-xl font-bold text-sm text-purple-300 touch-manipulation flex items-center justify-center gap-2"
-                  >
-                    🔊 Read it to me!
-                  </button>
+                  <div className="px-3 pb-2">
+                    <button
+                      onClick={() => readAloud(msg.text)}
+                      className="w-full py-2.5 bg-white/10 hover:bg-white/15 rounded-xl font-bold text-xs text-white/60 touch-manipulation flex items-center justify-center gap-1.5"
+                    >
+                      🔊 Read it to me!
+                    </button>
+                  </div>
                 )}
               </div>
             </motion.div>
