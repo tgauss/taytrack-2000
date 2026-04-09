@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Volume2 } from 'lucide-react';
-import { journalEntries, getAvailableEntries, type JournalEntry } from '@/lib/daily-journal';
+import { journalEntries } from '@/lib/daily-journal';
 import { soundManager } from '@/lib/sounds';
 import { useGameStore } from '@/lib/game-state';
+import { playLocalAudio, stopElevenLabsSpeech } from '@/lib/voice';
 
 interface DailyJournalProps {
   isOpen: boolean;
@@ -17,38 +17,45 @@ export function DailyJournal({ isOpen, onClose }: DailyJournalProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { isMuted } = useGameStore();
 
-  // For demo/preview, show all entries. During the trip, show only available ones.
-  const tripStart = new Date('2026-04-12T00:00:00');
-  const now = new Date();
-  const entries = now >= tripStart ? getAvailableEntries() : journalEntries;
+  const today = new Date().toISOString().split('T')[0];
+  const tripStart = '2026-04-12';
 
-  // Reset to latest entry when opening
+  // Determine which entries are unlocked
+  const isUnlocked = (date: string) => {
+    // Before trip starts, show all as preview
+    if (today < tripStart) return true;
+    // During/after trip, only show days that have happened
+    return date <= today;
+  };
+
+  // Reset to latest unlocked entry when opening
   useEffect(() => {
-    if (isOpen && entries.length > 0) {
-      setCurrentIndex(entries.length - 1);
+    if (isOpen) {
+      stopElevenLabsSpeech();
+      setIsSpeaking(false);
+      const lastUnlocked = journalEntries.filter(e => isUnlocked(e.date)).length - 1;
+      setCurrentIndex(Math.max(0, lastUnlocked));
     }
-  }, [isOpen, entries.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
-  const currentEntry = entries[currentIndex];
+  const currentEntry = journalEntries[currentIndex];
+  const locked = currentEntry ? !isUnlocked(currentEntry.date) : false;
 
-  const speakStory = useCallback(() => {
+  const handlePlay = () => {
     if (!currentEntry || isMuted) return;
+    soundManager.tap();
+    stopElevenLabsSpeech();
 
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(currentEntry.story);
-    utterance.rate = 0.85;
-    utterance.pitch = 1.1;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
-  }, [currentEntry, isMuted]);
+    if (locked) {
+      playLocalAudio('journal-locked', () => setIsSpeaking(true), () => setIsSpeaking(false));
+    } else {
+      playLocalAudio(currentEntry.audioKey, () => setIsSpeaking(true), () => setIsSpeaking(false));
+    }
+  };
 
   const handleClose = () => {
-    window.speechSynthesis.cancel();
+    stopElevenLabsSpeech();
     soundManager.tap();
     onClose();
   };
@@ -56,15 +63,17 @@ export function DailyJournal({ isOpen, onClose }: DailyJournalProps) {
   const handlePrev = () => {
     if (currentIndex > 0) {
       soundManager.tap();
-      window.speechSynthesis.cancel();
+      stopElevenLabsSpeech();
+      setIsSpeaking(false);
       setCurrentIndex(prev => prev - 1);
     }
   };
 
   const handleNext = () => {
-    if (currentIndex < entries.length - 1) {
+    if (currentIndex < journalEntries.length - 1) {
       soundManager.tap();
-      window.speechSynthesis.cancel();
+      stopElevenLabsSpeech();
+      setIsSpeaking(false);
       setCurrentIndex(prev => prev + 1);
     }
   };
@@ -78,145 +87,178 @@ export function DailyJournal({ isOpen, onClose }: DailyJournalProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-          onClick={handleClose}
+          className="fixed inset-0 z-[100]"
         >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+
           <motion.div
-            initial={{ scale: 0.8, opacity: 0, y: 50 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.8, opacity: 0, y: 50 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 250 }}
+            className="absolute bottom-0 left-0 right-0 max-h-[88vh] flex flex-col"
           >
-            {/* Header */}
-            <div className="relative px-6 py-6 bg-gradient-to-r from-indigo-500 to-purple-500 text-center">
-              <button
-                onClick={handleClose}
-                className="absolute top-4 right-4 w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors touch-manipulation"
-              >
-                <X className="w-6 h-6" />
-              </button>
+            <div className="bg-slate-900 rounded-t-[28px] flex flex-col overflow-hidden border-t border-white/10 shadow-2xl">
 
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="text-5xl mb-2"
-              >
-                {currentEntry.emoji}
-              </motion.div>
-              <h2 className="text-2xl font-bold text-white">
-                Day {currentEntry.day}: {currentEntry.title}
-              </h2>
-              <p className="text-white/70 text-sm mt-1">
-                {new Date(currentEntry.date + 'T12:00:00').toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric'
+              {/* Day selector dots */}
+              <div className="flex justify-center gap-2 pt-4 pb-2">
+                {journalEntries.map((entry, i) => {
+                  const unlocked = isUnlocked(entry.date);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => { soundManager.tap(); stopElevenLabsSpeech(); setIsSpeaking(false); setCurrentIndex(i); }}
+                      className={`h-2.5 rounded-full transition-all touch-manipulation ${
+                        i === currentIndex
+                          ? 'w-8 bg-purple-400'
+                          : unlocked
+                            ? 'w-2.5 bg-purple-400/50'
+                            : 'w-2.5 bg-white/10'
+                      }`}
+                    />
+                  );
                 })}
-              </p>
-            </div>
+              </div>
 
-            {/* Story content */}
-            <div className="p-6">
-              {/* Speaking indicator */}
-              {isSpeaking && (
+              {/* Header */}
+              <div className="text-center px-6 pt-2 pb-4">
                 <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 0.5, repeat: Infinity }}
-                  className="flex items-center gap-2 text-primary mb-3"
+                  key={currentEntry.day}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-5xl mb-2"
                 >
-                  <Volume2 className="w-5 h-5" />
-                  <span className="text-sm font-medium">Reading the story...</span>
+                  {locked ? '🔒' : currentEntry.emoji}
                 </motion.div>
-              )}
-
-              <div className="bg-muted rounded-2xl p-6 mb-4">
-                <p className="text-lg leading-relaxed text-foreground">
-                  {currentEntry.story}
+                <h2 className="text-2xl font-bold text-white">
+                  {locked ? 'Coming Soon!' : `Day ${currentEntry.day}: ${currentEntry.title}`}
+                </h2>
+                <p className="text-sm text-white/40 mt-1">
+                  {new Date(currentEntry.date + 'T12:00:00').toLocaleDateString('en-US', {
+                    weekday: 'long', month: 'long', day: 'numeric'
+                  })}
                 </p>
               </div>
 
-              {/* Fun detail */}
-              {currentEntry.funDetail && (
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 mb-4">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">🤯</span>
-                    <p className="text-base text-foreground leading-relaxed">
-                      <span className="font-bold text-amber-500">Fun Fact: </span>
-                      {currentEntry.funDetail}
-                    </p>
-                  </div>
-                </div>
-              )}
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto px-5 pb-4" style={{ maxHeight: '45vh' }}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentEntry.day}
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -30 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {locked ? (
+                      <div className="text-center py-8">
+                        <motion.div
+                          animate={{ y: [0, -8, 0] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="text-6xl mb-4"
+                        >
+                          🔮
+                        </motion.div>
+                        <p className="text-lg text-white/60">
+                          This story hasn&apos;t happened yet!
+                        </p>
+                        <p className="text-base text-white/40 mt-2">
+                          Come back on {new Date(currentEntry.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} to hear what Dad does!
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Story text */}
+                        <div className="bg-white/5 rounded-2xl p-5 mb-4">
+                          {isSpeaking && (
+                            <motion.div
+                              animate={{ opacity: [0.4, 1, 0.4] }}
+                              transition={{ duration: 1, repeat: Infinity }}
+                              className="text-cyan-400 text-sm mb-3 flex items-center gap-2"
+                            >
+                              🔊 Listening...
+                            </motion.div>
+                          )}
+                          <p className="text-base leading-relaxed text-white/85">
+                            {currentEntry.voScript}
+                          </p>
+                        </div>
 
-              {/* Sleeps counter */}
-              {currentEntry.sleepsLeft > 0 && (
-                <div className="text-center mb-4">
-                  <span className="inline-flex items-center gap-2 bg-purple-500/20 text-purple-400 px-4 py-2 rounded-full text-sm font-bold">
-                    <span className="text-lg">😴</span>
-                    {currentEntry.sleepsLeft} sleep{currentEntry.sleepsLeft !== 1 ? 's' : ''} until Dad&apos;s home!
-                  </span>
-                </div>
-              )}
+                        {/* Fun detail */}
+                        <div className="bg-amber-500/10 border-2 border-amber-500/20 rounded-2xl p-4 mb-4">
+                          <div className="flex items-start gap-2">
+                            <span className="text-xl">🤯</span>
+                            <p className="text-sm text-white/70">
+                              <span className="font-bold text-amber-400">Fun Fact: </span>
+                              {currentEntry.funDetail}
+                            </p>
+                          </div>
+                        </div>
 
-              {currentEntry.sleepsLeft === 0 && (
-                <motion.div
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                  className="text-center mb-4"
-                >
-                  <span className="inline-flex items-center gap-2 bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-lg font-bold">
-                    🏠 Dad is HOME!
-                  </span>
-                </motion.div>
-              )}
-
-              {/* Navigation */}
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={handlePrev}
-                  disabled={currentIndex === 0}
-                  className="w-14 h-14 bg-muted rounded-full flex items-center justify-center disabled:opacity-30 touch-manipulation"
-                >
-                  <ChevronLeft className="w-8 h-8 text-foreground" />
-                </button>
-
-                <button
-                  onClick={speakStory}
-                  disabled={isSpeaking}
-                  className="px-6 py-3 bg-primary text-primary-foreground rounded-full font-bold flex items-center gap-2 disabled:opacity-50 touch-manipulation"
-                >
-                  <Volume2 className="w-5 h-5" />
-                  Read to Me
-                </button>
-
-                <button
-                  onClick={handleNext}
-                  disabled={currentIndex >= entries.length - 1}
-                  className="w-14 h-14 bg-muted rounded-full flex items-center justify-center disabled:opacity-30 touch-manipulation"
-                >
-                  <ChevronRight className="w-8 h-8 text-foreground" />
-                </button>
+                        {/* Sleeps counter */}
+                        {currentEntry.sleepsLeft > 0 && (
+                          <div className="text-center mb-2">
+                            <span className="inline-flex items-center gap-2 bg-purple-500/15 text-purple-300 px-4 py-2 rounded-full text-sm font-bold">
+                              😴 {currentEntry.sleepsLeft} sleep{currentEntry.sleepsLeft !== 1 ? 's' : ''} until Dad&apos;s home!
+                            </span>
+                          </div>
+                        )}
+                        {currentEntry.sleepsLeft === 0 && (
+                          <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-center mb-2">
+                            <span className="inline-flex items-center gap-2 bg-green-500/15 text-green-300 px-4 py-2 rounded-full text-base font-bold">
+                              🏠 Dad is HOME!
+                            </span>
+                          </motion.div>
+                        )}
+                      </>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
-              {/* Day indicators */}
-              <div className="flex justify-center gap-2 mt-4">
-                {entries.map((_, i) => (
+              {/* Bottom bar */}
+              <div className="p-4 border-t border-white/5 bg-slate-900/98">
+                <div className="flex gap-3">
+                  {/* Back */}
                   <button
-                    key={i}
-                    onClick={() => {
-                      soundManager.tap();
-                      window.speechSynthesis.cancel();
-                      setCurrentIndex(i);
-                    }}
-                    className={`w-3 h-3 rounded-full transition-all touch-manipulation ${
-                      i === currentIndex
-                        ? 'bg-primary scale-125'
-                        : 'bg-muted-foreground/30'
-                    }`}
-                  />
-                ))}
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0}
+                    className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-xl touch-manipulation disabled:opacity-20"
+                  >
+                    ◀️
+                  </button>
+
+                  {/* BIG read to me / listen button */}
+                  <motion.button
+                    onClick={handlePlay}
+                    disabled={isSpeaking}
+                    className="flex-1 h-14 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl font-bold text-lg text-white touch-manipulation flex items-center justify-center gap-2 disabled:opacity-50"
+                    whileTap={{ scale: 0.96 }}
+                    animate={!isSpeaking ? {
+                      boxShadow: ['0 0 20px rgba(139,92,246,0.3)', '0 0 40px rgba(139,92,246,0.6)', '0 0 20px rgba(139,92,246,0.3)'],
+                    } : {}}
+                    transition={{ boxShadow: { duration: 1.5, repeat: Infinity } }}
+                  >
+                    {isSpeaking ? '🔊 Listening...' : locked ? '🔒 Peek!' : '🔊 Read to Me!'}
+                  </motion.button>
+
+                  {/* Forward */}
+                  <button
+                    onClick={handleNext}
+                    disabled={currentIndex >= journalEntries.length - 1}
+                    className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-xl touch-manipulation disabled:opacity-20"
+                  >
+                    ▶️
+                  </button>
+                </div>
+
+                {/* Close */}
+                <button
+                  onClick={handleClose}
+                  className="w-full mt-3 py-3 bg-white/5 text-white/60 rounded-xl font-medium text-sm touch-manipulation"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </motion.div>
