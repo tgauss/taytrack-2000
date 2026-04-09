@@ -167,7 +167,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       setMapLoaded(true);
 
       // Add 3D terrain (skip on mobile — can cause GPU issues)
-      const isMobileDevice = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
+      const isMobileDevice = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
       if (!isMobileDevice) {
         try {
           map.current.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
@@ -181,7 +181,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       } catch {}
 
       // 3D buildings — skip on mobile/iPad to avoid GPU crashes
-      const isMobile = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
+      const isMobile = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
       if (!isMobile) {
         try {
           const layers = map.current.getStyle().layers;
@@ -787,8 +787,8 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
   const distanceFromHome = currentLocData ? Math.round(getDistanceMiles(LOCATIONS.vancouver.lat, LOCATIONS.vancouver.lng, currentLocData.lat, currentLocData.lng)) : 0;
 
   return (
-    <div className="relative w-full h-full overflow-hidden" style={{ minHeight: '100vh', minWidth: '100vw' }}>
-      <div ref={mapContainer} className="absolute inset-0" style={{ width: '100vw', height: '100vh', position: 'absolute', top: 0, left: 0 }} />
+    <div className="relative w-full h-full overflow-hidden" style={{ minHeight: '100dvh', minWidth: '100vw' }}>
+      <div ref={mapContainer} className="absolute inset-0" style={{ width: '100%', height: '100dvh', position: 'absolute', top: 0, left: 0 }} />
 
       {!mapLoaded && (
         <div className="absolute inset-0 bg-background flex flex-col items-center justify-center">
