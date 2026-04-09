@@ -147,6 +147,9 @@ const POI_FULL_AUDIO: Record<string, string> = {
   'omaha-bigboy': 'omaha-bigboy-full',
 };
 
+// Audio preload cache — keyed by audio key, stores ready-to-play Audio elements
+const preloadCache = new Map<string, HTMLAudioElement>();
+
 // Currently playing audio
 let currentAudio: HTMLAudioElement | null = null;
 let audioUnlocked = false;
@@ -180,7 +183,61 @@ export function isElevenLabsAvailable(): boolean {
 }
 
 /**
+ * Preload an audio file into the cache so it plays instantly later.
+ */
+export function preloadAudio(key: string): void {
+  if (preloadCache.has(key)) return;
+  const path = LOCAL_AUDIO[key];
+  if (!path) return;
+  const audio = new Audio();
+  audio.preload = 'auto';
+  audio.src = path;
+  // Start loading — the browser will fetch and buffer the file
+  audio.load();
+  preloadCache.set(key, audio);
+}
+
+/**
+ * Preload all VOs for a trip segment (travel VO + arrival VO + city POI VOs).
+ * Call this when arriving at a city to warm the cache for the next leg.
+ */
+export function preloadNextSegment(fromCity: string, toCity: string): void {
+  // Travel VO
+  const travelKey = TRAVEL_AUDIO[`${fromCity}-${toCity}`];
+  if (travelKey) preloadAudio(travelKey);
+
+  // Arrival VO
+  const arrivalCity = toCity === 'vancouver-return' ? 'home' : toCity;
+  preloadAudio(`arrive-${arrivalCity}`);
+
+  // Return flight VOs
+  if (fromCity === 'omaha') {
+    preloadAudio('flight-omaha-seattle');
+    preloadAudio('layover-seattle');
+    preloadAudio('flight-seattle-pdx');
+  }
+
+  // City POI VOs for destination
+  Object.keys(POI_FULL_AUDIO).forEach(poiId => {
+    if (poiId.startsWith(toCity + '-') || (toCity === 'vancouver-return' && poiId.startsWith('vancouver-'))) {
+      preloadAudio(POI_FULL_AUDIO[poiId]);
+    }
+  });
+}
+
+/**
+ * Preload the intro and first segment VOs (call on app mount).
+ */
+export function preloadIntro(): void {
+  preloadAudio('intro');
+  preloadAudio('drive-home-to-airport');
+  preloadAudio('flight-vancouver-seattle');
+  preloadAudio('arrive-seattle');
+}
+
+/**
  * Play a pre-generated audio file by key.
+ * Uses preload cache for instant playback if available.
  * Returns true if a local file was found and played.
  */
 export function playLocalAudio(
@@ -193,7 +250,15 @@ export function playLocalAudio(
 
   stopElevenLabsSpeech();
 
-  const audio = new Audio(path);
+  // Use cached audio if available (instant playback), otherwise create new
+  let audio: HTMLAudioElement;
+  if (preloadCache.has(key)) {
+    audio = preloadCache.get(key)!;
+    preloadCache.delete(key); // Remove from cache (one-time use)
+    audio.currentTime = 0;
+  } else {
+    audio = new Audio(path);
+  }
   currentAudio = audio;
 
   audio.onplay = () => onStart?.();
@@ -202,8 +267,6 @@ export function playLocalAudio(
 
   audio.play().catch((err) => {
     console.warn('[TAYTRACK] Audio play blocked (likely autoplay policy):', err?.message);
-    // On iOS, autoplay is blocked until user interacts.
-    // Fire onEnd so the UI doesn't get stuck waiting.
     onEnd?.();
     currentAudio = null;
   });

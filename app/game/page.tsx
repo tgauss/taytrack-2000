@@ -17,9 +17,9 @@ import { KiddoConnect, useNewMessages } from '@/components/game/KiddoConnect';
 import { GoodNight } from '@/components/game/GoodNight';
 import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
-import { useGameStore, type GameLocation } from '@/lib/game-state';
+import { useGameStore, getNextLocation, type GameLocation } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
-import { speakText, stopElevenLabsSpeech, playArrivalAudio, playLocalAudio, unlockAudio } from '@/lib/voice';
+import { speakText, stopElevenLabsSpeech, playArrivalAudio, playLocalAudio, unlockAudio, preloadIntro, preloadNextSegment } from '@/lib/voice';
 import type { POI } from '@/lib/poi-data';
 
 const AdventureMap = dynamic(
@@ -71,6 +71,8 @@ export default function GamePage() {
     if (currentLocation === 'vancouver') {
       setShowIntro(true);
     }
+    // Preload intro and first segment VOs on mount
+    preloadIntro();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
 
@@ -85,10 +87,16 @@ export default function GamePage() {
     mapControlsRef.current?.flyBackToCity();
   }, []);
 
-  // Celebration + narration when arriving at a city
+  // Celebration + narration when arriving at a city, and preload next segment
   useEffect(() => {
     if (currentLocation === 'vancouver' || isMuted) return;
     const cityKey = currentLocation === 'vancouver-return' ? 'home' : currentLocation;
+
+    // Preload VOs for next leg while arrival plays
+    const nextLoc = getNextLocation(currentLocation);
+    if (nextLoc) {
+      preloadNextSegment(currentLocation, nextLoc);
+    }
 
     // Trigger celebration
     setCelebrationCity({ name: CITY_NAMES[currentLocation] || '', emoji: CITY_EMOJIS[currentLocation] || '🎉' });
