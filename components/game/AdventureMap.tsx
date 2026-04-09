@@ -629,7 +629,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
             transition={{ type: 'spring', damping: 12, stiffness: 150, delay: 0.5 }}
             onClick={handleGoNext}
             disabled={isAnimating}
-            className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20 touch-manipulation disabled:opacity-50"
+            className="absolute bottom-[200px] left-1/2 -translate-x-1/2 z-20 touch-manipulation disabled:opacity-50"
             whileTap={{ scale: 0.9 }}
           >
             <motion.div
@@ -667,7 +667,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         {showGoButton && currentLocation !== 'vancouver' && (
           <motion.button key="go-btn" initial={{ opacity: 0, y: 20, scale: 0.8 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.8 }}
             onClick={handleGoNext} disabled={isAnimating}
-            className="absolute bottom-28 left-1/2 -translate-x-1/2 px-10 py-5 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-2xl rounded-full shadow-2xl disabled:opacity-50 z-20 touch-manipulation"
+            className="absolute bottom-[200px] left-1/2 -translate-x-1/2 px-10 py-5 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-2xl rounded-full shadow-2xl disabled:opacity-50 z-20 touch-manipulation"
             style={{ minWidth: 220, minHeight: 64 }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <span className="flex items-center gap-3">
               GO to {nextLocName}!
@@ -680,7 +680,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       <AnimatePresence>
         {phase === 'traveling' && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
-            className="absolute bottom-28 left-1/2 -translate-x-1/2 px-8 py-4 bg-card/80 backdrop-blur-sm text-foreground font-bold text-xl rounded-full shadow-2xl z-20 border border-border">
+            className="absolute bottom-[200px] left-1/2 -translate-x-1/2 px-8 py-4 bg-card/80 backdrop-blur-sm text-foreground font-bold text-xl rounded-full shadow-2xl z-20 border border-border">
             <span className="flex items-center gap-3">
               <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
                 {(getSegmentType(currentLocation, nextLocation!) || 'drive') === 'flight' ? '✈️' : '🚗'}
@@ -694,7 +694,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       <AnimatePresence>
         {isJourneyComplete && mapLoaded && (
           <motion.div initial={{ opacity: 0, scale: 0.5, y: 50 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="absolute bottom-28 left-1/2 -translate-x-1/2 px-10 py-5 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 text-white font-bold text-2xl rounded-full shadow-2xl z-20 text-center">
+            className="absolute bottom-[200px] left-1/2 -translate-x-1/2 px-10 py-5 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 text-white font-bold text-2xl rounded-full shadow-2xl z-20 text-center">
             <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 0.5, repeat: Infinity }}>🎉 Dad is HOME! 🎉</motion.div>
           </motion.div>
         )}
