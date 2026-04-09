@@ -295,7 +295,7 @@ export default function ConnectPage() {
                 <div
                   className={`${
                     msg.fromKids
-                      ? 'bg-pink-400/80 rounded-2xl rounded-br-md'
+                      ? 'bg-pink-600 rounded-2xl rounded-br-md'
                       : 'bg-blue-500/80 rounded-2xl rounded-bl-md'
                   }`}
                   onTouchStart={() => handleLongPressStart(msg.timestamp)}

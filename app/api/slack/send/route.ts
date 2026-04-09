@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         imageBuffer,
         `photo-${Date.now()}.jpg`,
         'image/jpeg',
-        `📸 *${displayName}* sent a photo!${text ? `\n> ${text}` : ''}`
+        text || '📸'
       );
       return NextResponse.json(result);
     }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         audioBuffer,
         `voice-${Date.now()}.webm`,
         'audio/webm',
-        `🎤 *${displayName}* sent a voice message!`
+        '🎤'
       );
       return NextResponse.json(result);
     }
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           channel: CHANNEL_ID,
-          text: `💬 *${displayName}:* ${text}`,
+          text,
         }),
       });
       const data = await res.json();
