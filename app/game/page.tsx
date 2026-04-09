@@ -14,7 +14,7 @@ import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
-import { speakText, stopElevenLabsSpeech } from '@/lib/voice';
+import { speakText, stopElevenLabsSpeech, playArrivalAudio, playLocalAudio } from '@/lib/voice';
 import type { POI } from '@/lib/poi-data';
 
 const AdventureMap = dynamic(
@@ -35,15 +35,7 @@ const AdventureMap = dynamic(
 type ActiveGame = 'packing' | 'memory' | null;
 type MenuPanel = 'none' | 'menu' | 'badges' | 'journal' | 'games';
 
-// City arrival narration lines (for ElevenLabs)
-const ARRIVAL_NARRATIONS: Record<string, string> = {
-  seattle: "We made it to Seattle! Dad's plane is stopping here for a quick break. Did you know Seattle has a tower that looks like a spaceship?",
-  tulsa: "Welcome to Tulsa, Oklahoma! Dad is here for his big conference. This city has a giant golden man statue as tall as seven giraffes!",
-  lincoln: "We're in Lincoln, Nebraska! Dad drove all the way here through Kansas. Nebraska has more cows than people! Moo!",
-  roca: "We're in tiny Roca! Only two hundred and one people live here. Dad is going to pack SO many boxes!",
-  omaha: "Welcome to Omaha! This city has the best zoo in the whole world! Dad is about to fly home to us!",
-  'vancouver-return': "DAD IS HOME! He made it back! Eight days of adventures and he's finally here for hugs!",
-};
+// Arrival narrations are now pre-generated audio files in /public/audio/
 
 export default function GamePage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
@@ -73,16 +65,14 @@ export default function GamePage() {
     mapControlsRef.current?.flyBackToCity();
   }, []);
 
-  // Proactive narration when arriving at a city
+  // Proactive narration when arriving at a city (pre-generated audio)
   useEffect(() => {
     if (currentLocation === 'vancouver' || isMuted) return;
-    const narration = ARRIVAL_NARRATIONS[currentLocation];
-    if (narration) {
-      const timer = setTimeout(() => {
-        speakText(narration, 'excited');
-      }, 3500); // Wait for arrival animation to finish
-      return () => clearTimeout(timer);
-    }
+    const cityKey = currentLocation === 'vancouver-return' ? 'home' : currentLocation;
+    const timer = setTimeout(() => {
+      playArrivalAudio(cityKey);
+    }, 3500);
+    return () => clearTimeout(timer);
   }, [currentLocation, isMuted]);
 
   useEffect(() => {
@@ -106,7 +96,7 @@ export default function GamePage() {
     setShowIntro(false);
     soundManager.fanfare();
     if (!isMuted) {
-      speakText("Let's go! Dad is heading to the airport. Tap Blast Off to start the adventure!", 'excited');
+      playLocalAudio('intro');
     }
   };
 

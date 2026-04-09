@@ -1,109 +1,141 @@
 'use client';
 
-// ElevenLabs voice integration with caching
-// Uses different voice characters per content type
+/**
+ * Voice narration system
+ *
+ * Uses pre-generated audio files (ElevenLabs "Eric" voice) saved locally.
+ * Falls back to browser TTS if no local audio exists.
+ * Zero runtime API calls — all audio is baked in.
+ */
 
-// Voice IDs from ElevenLabs (pre-made voices)
-const VOICES = {
-  narrator: '21m00Tcm4TlvDq8ikWAM',   // Rachel - warm, clear narrator
-  excited: 'EXAVITQu4vr4xnSDxMaL',     // Bella - young, energetic
-  storyteller: 'pNInz6obpgDQGcFmaJgB',  // Adam - deep, warm storyteller
-} as const;
+// Pre-generated audio file map
+const LOCAL_AUDIO: Record<string, string> = {
+  // Intro
+  'intro': '/audio/intro.mp3',
 
-export type VoiceType = keyof typeof VOICES;
+  // City arrivals
+  'arrive-seattle': '/audio/arrive-seattle.mp3',
+  'arrive-tulsa': '/audio/arrive-tulsa.mp3',
+  'arrive-lincoln': '/audio/arrive-lincoln.mp3',
+  'arrive-roca': '/audio/arrive-roca.mp3',
+  'arrive-omaha': '/audio/arrive-omaha.mp3',
+  'arrive-home': '/audio/arrive-home.mp3',
 
-const API_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
+  // Tulsa landmark fun facts
+  'tulsa-golden-driller-fact': '/audio/tulsa-golden-driller-fact.mp3',
+  'tulsa-center-universe-fact': '/audio/tulsa-center-universe-fact.mp3',
+  'tulsa-penguins-fact': '/audio/tulsa-penguins-fact.mp3',
+  'tulsa-cave-house-fact': '/audio/tulsa-cave-house-fact.mp3',
+  'tulsa-tunnels-fact': '/audio/tulsa-tunnels-fact.mp3',
+  'tulsa-elephant-law-fact': '/audio/tulsa-elephant-law-fact.mp3',
+  'tulsa-time-capsule-fact': '/audio/tulsa-time-capsule-fact.mp3',
+  'tulsa-yield-sign-fact': '/audio/tulsa-yield-sign-fact.mp3',
+  'tulsa-route66-fact': '/audio/tulsa-route66-fact.mp3',
+  'tulsa-gathering-place-fact': '/audio/tulsa-gathering-place-fact.mp3',
+  'tulsa-blue-whale-fact': '/audio/tulsa-blue-whale-fact.mp3',
 
-// In-memory audio cache to avoid re-generating the same text
-const audioCache = new Map<string, ArrayBuffer>();
+  // Lincoln landmark fun facts
+  'lincoln-capitol-fact': '/audio/lincoln-capitol-fact.mp3',
+  'lincoln-stadium-fact': '/audio/lincoln-stadium-fact.mp3',
+  'lincoln-morrill-fact': '/audio/lincoln-morrill-fact.mp3',
+  'lincoln-haymarket-fact': '/audio/lincoln-haymarket-fact.mp3',
+  'lincoln-sunken-gardens-fact': '/audio/lincoln-sunken-gardens-fact.mp3',
+
+  // Roca landmark fun facts
+  'roca-berry-farm-fact': '/audio/roca-berry-farm-fact.mp3',
+  'roca-warehouse-fact': '/audio/roca-warehouse-fact.mp3',
+
+  // Omaha landmark fun facts
+  'omaha-zoo-fact': '/audio/omaha-zoo-fact.mp3',
+  'omaha-bridge-fact': '/audio/omaha-bridge-fact.mp3',
+  'omaha-durham-fact': '/audio/omaha-durham-fact.mp3',
+  'omaha-old-market-fact': '/audio/omaha-old-market-fact.mp3',
+  'omaha-bigboy-fact': '/audio/omaha-bigboy-fact.mp3',
+};
+
+// Map POI IDs to their audio keys
+const POI_AUDIO: Record<string, string> = {
+  'tulsa-golden-driller': 'tulsa-golden-driller-fact',
+  'tulsa-center-universe': 'tulsa-center-universe-fact',
+  'tulsa-penguins': 'tulsa-penguins-fact',
+  'tulsa-cave-house': 'tulsa-cave-house-fact',
+  'tulsa-tunnels': 'tulsa-tunnels-fact',
+  'tulsa-elephant-law': 'tulsa-elephant-law-fact',
+  'tulsa-time-capsule': 'tulsa-time-capsule-fact',
+  'tulsa-yield-sign': 'tulsa-yield-sign-fact',
+  'tulsa-route66': 'tulsa-route66-fact',
+  'tulsa-gathering-place': 'tulsa-gathering-place-fact',
+  'tulsa-blue-whale': 'tulsa-blue-whale-fact',
+  'lincoln-capitol': 'lincoln-capitol-fact',
+  'lincoln-stadium': 'lincoln-stadium-fact',
+  'lincoln-morrill': 'lincoln-morrill-fact',
+  'lincoln-haymarket': 'lincoln-haymarket-fact',
+  'lincoln-sunken-gardens': 'lincoln-sunken-gardens-fact',
+  'roca-berry-farm': 'roca-berry-farm-fact',
+  'roca-warehouse': 'roca-warehouse-fact',
+  'omaha-zoo': 'omaha-zoo-fact',
+  'omaha-bridge': 'omaha-bridge-fact',
+  'omaha-durham': 'omaha-durham-fact',
+  'omaha-old-market': 'omaha-old-market-fact',
+  'omaha-bigboy': 'omaha-bigboy-fact',
+};
 
 // Currently playing audio
 let currentAudio: HTMLAudioElement | null = null;
 
-function getApiKey(): string | null {
-  return process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY || null;
-}
+export type VoiceType = 'narrator' | 'excited' | 'storyteller';
 
 export function isElevenLabsAvailable(): boolean {
-  return !!getApiKey();
+  return true; // We always have pre-generated audio
 }
 
-export async function speakWithElevenLabs(
-  text: string,
-  voiceType: VoiceType = 'narrator',
+/**
+ * Play a pre-generated audio file by key.
+ * Returns true if a local file was found and played.
+ */
+export function playLocalAudio(
+  key: string,
   onStart?: () => void,
   onEnd?: () => void,
-): Promise<boolean> {
-  const apiKey = getApiKey();
-  if (!apiKey) return false;
+): boolean {
+  const path = LOCAL_AUDIO[key];
+  if (!path) return false;
 
-  // Stop any currently playing audio
   stopElevenLabsSpeech();
 
-  const voiceId = VOICES[voiceType];
-  const cacheKey = `${voiceId}:${text}`;
+  const audio = new Audio(path);
+  currentAudio = audio;
 
-  try {
-    let audioBuffer: ArrayBuffer;
+  audio.onplay = () => onStart?.();
+  audio.onended = () => { onEnd?.(); currentAudio = null; };
+  audio.onerror = () => { onEnd?.(); currentAudio = null; };
 
-    // Check cache first
-    if (audioCache.has(cacheKey)) {
-      audioBuffer = audioCache.get(cacheKey)!;
-    } else {
-      // Call ElevenLabs API
-      const response = await fetch(`${API_URL}/${voiceId}`, {
-        method: 'POST',
-        headers: {
-          'xi-api-key': apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text,
-          model_id: 'eleven_turbo_v2_5',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.4,
-            use_speaker_boost: true,
-          },
-        }),
-      });
+  audio.play().catch(() => { onEnd?.(); currentAudio = null; });
+  return true;
+}
 
-      if (!response.ok) {
-        console.error('[TAYTRACK] ElevenLabs API error:', response.status, await response.text());
-        return false;
-      }
+/**
+ * Play the fun fact audio for a POI.
+ */
+export function playPOIAudio(
+  poiId: string,
+  onStart?: () => void,
+  onEnd?: () => void,
+): boolean {
+  const audioKey = POI_AUDIO[poiId];
+  if (audioKey) return playLocalAudio(audioKey, onStart, onEnd);
+  return false;
+}
 
-      audioBuffer = await response.arrayBuffer();
-      // Cache it
-      audioCache.set(cacheKey, audioBuffer);
-    }
-
-    // Play the audio
-    const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    currentAudio = audio;
-
-    audio.onplay = () => onStart?.();
-    audio.onended = () => {
-      onEnd?.();
-      URL.revokeObjectURL(url);
-      currentAudio = null;
-    };
-    audio.onerror = () => {
-      onEnd?.();
-      URL.revokeObjectURL(url);
-      currentAudio = null;
-    };
-
-    await audio.play();
-    return true;
-  } catch (error) {
-    console.error('[TAYTRACK] ElevenLabs error:', error);
-    onEnd?.();
-    return false;
-  }
+/**
+ * Play a city arrival narration.
+ */
+export function playArrivalAudio(
+  cityId: string,
+  onStart?: () => void,
+  onEnd?: () => void,
+): boolean {
+  return playLocalAudio(`arrive-${cityId}`, onStart, onEnd);
 }
 
 export function stopElevenLabsSpeech() {
@@ -112,28 +144,26 @@ export function stopElevenLabsSpeech() {
     currentAudio.currentTime = 0;
     currentAudio = null;
   }
-  // Also stop browser TTS as fallback
   window.speechSynthesis?.cancel();
 }
 
-// Fallback to browser TTS if ElevenLabs is not available
+/**
+ * Speak text — tries local audio first, then falls back to browser TTS.
+ * For POI facts, use playPOIAudio() instead for the pre-generated version.
+ */
 export function speakText(
   text: string,
-  voiceType: VoiceType = 'narrator',
+  _voiceType: VoiceType = 'narrator',
   onStart?: () => void,
   onEnd?: () => void,
 ) {
-  if (isElevenLabsAvailable()) {
-    speakWithElevenLabs(text, voiceType, onStart, onEnd);
-  } else {
-    // Browser TTS fallback
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.85;
-    utterance.pitch = 1.1;
-    utterance.onstart = () => onStart?.();
-    utterance.onend = () => onEnd?.();
-    utterance.onerror = () => onEnd?.();
-    window.speechSynthesis.speak(utterance);
-  }
+  // Fallback to browser TTS for text that doesn't have pre-generated audio
+  stopElevenLabsSpeech();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.85;
+  utterance.pitch = 1.1;
+  utterance.onstart = () => onStart?.();
+  utterance.onend = () => onEnd?.();
+  utterance.onerror = () => onEnd?.();
+  window.speechSynthesis.speak(utterance);
 }

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { soundManager } from '@/lib/sounds';
 import { useGameStore } from '@/lib/game-state';
-import { speakText as speak, stopElevenLabsSpeech, isElevenLabsAvailable } from '@/lib/voice';
+import { speakText as speak, stopElevenLabsSpeech, isElevenLabsAvailable, playPOIAudio } from '@/lib/voice';
 import type { POI } from '@/lib/poi-data';
 
 interface LandmarkExplorerProps {
@@ -43,20 +43,30 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
     setIsSpeaking(false);
   }, [poi?.id]);
 
-  // Auto-play TTS for each step
+  // Auto-play narration for each step — uses pre-generated audio for fun facts
   useEffect(() => {
     if (!poi || isMuted) return;
-    let text = '';
-    if (currentStep === 'photo') text = `Look at this! This is ${poi.name}!`;
-    else if (currentStep === 'funfact') text = poi.funFact;
-    else if (currentStep === 'didyouknow') text = `Did you know? ${poi.didYouKnow}`;
-    else if (currentStep === 'history') text = poi.historyLesson;
 
-    if (text) {
-      const voice = currentStep === 'history' ? 'storyteller' : 'excited';
-      const t = setTimeout(() => speak(text, voice, () => setIsSpeaking(true), () => setIsSpeaking(false)), 400);
-      return () => clearTimeout(t);
-    }
+    const t = setTimeout(() => {
+      // Try pre-generated audio first (for fun fact step)
+      if (currentStep === 'funfact') {
+        const played = playPOIAudio(poi.id, () => setIsSpeaking(true), () => setIsSpeaking(false));
+        if (played) return;
+      }
+
+      // Fall back to browser TTS for other steps
+      let text = '';
+      if (currentStep === 'photo') text = `Look at this! This is ${poi.name}!`;
+      else if (currentStep === 'funfact') text = poi.funFact;
+      else if (currentStep === 'didyouknow') text = `Did you know? ${poi.didYouKnow}`;
+      else if (currentStep === 'history') text = poi.historyLesson;
+
+      if (text) {
+        const voice = currentStep === 'history' ? 'storyteller' : 'excited';
+        speak(text, voice, () => setIsSpeaking(true), () => setIsSpeaking(false));
+      }
+    }, 400);
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poi?.id, currentStep, isMuted]);
 
@@ -80,6 +90,12 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
 
   const handleReplay = useCallback(() => {
     if (!poi || isMuted) return;
+    // Try pre-generated audio first
+    if (currentStep === 'funfact') {
+      const played = playPOIAudio(poi.id, () => setIsSpeaking(true), () => setIsSpeaking(false));
+      if (played) return;
+    }
+    // Fall back to browser TTS
     let text = '';
     if (currentStep === 'funfact') text = poi.funFact;
     else if (currentStep === 'didyouknow') text = `Did you know? ${poi.didYouKnow}`;
