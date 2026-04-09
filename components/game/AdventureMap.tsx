@@ -313,7 +313,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       const vehicleEl = document.createElement('div');
       vehicleEl.innerHTML = `<div style="position:relative;display:flex;align-items:center;justify-content:center;">
         <div class="vehicle-pulse-ring"></div>
-        <div class="vehicle-emoji">✈️</div>
+        <div class="vehicle-emoji">${isAtStart ? '🚗' : '✈️'}</div>
       </div>`;
       vehicleEl.style.cssText = 'transform:translate(-50%,-50%);';
       vehicleMarkerRef.current = new mapboxgl.Marker({ element: vehicleEl }).setLngLat(initialCenter).addTo(map.current);
