@@ -238,11 +238,11 @@ export default function GamePage() {
       </AnimatePresence>
 
       {/* ===== SIMPLIFIED TOP BAR ===== */}
-      <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
+      <div className="absolute top-5 left-5 right-5 z-30 flex items-center justify-between pointer-events-none">
         {/* Left: Home button only */}
         <Link href="/" className="pointer-events-auto">
           <motion.div
-            className="w-12 h-12 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-2xl"
+            className="w-16 h-16 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-3xl"
             whileTap={{ scale: 0.9 }}
           >
             🏠
@@ -250,8 +250,8 @@ export default function GamePage() {
         </Link>
 
         {/* Center: Title (smaller) */}
-        <div className="bg-card/70 backdrop-blur-sm rounded-full px-4 py-1.5 shadow-md border border-border">
-          <span className="text-sm font-bold text-foreground">Kiddos</span>
+        <div className="bg-card/70 backdrop-blur-sm rounded-full px-5 py-2 shadow-md border border-border">
+          <span className="text-base font-bold text-foreground">Kiddos</span>
         </div>
 
         {/* Right: Simple emoji menu button */}
@@ -260,7 +260,7 @@ export default function GamePage() {
             soundManager.tap();
             setMenuPanel(menuPanel === 'menu' ? 'none' : 'menu');
           }}
-          className="pointer-events-auto relative w-12 h-12 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-2xl"
+          className="pointer-events-auto relative w-16 h-16 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-3xl"
           whileTap={{ scale: 0.9 }}
         >
           ⭐

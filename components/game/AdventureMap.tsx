@@ -787,8 +787,6 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       setPhase('exploring');
       setWelcomeCity(null);
     }, 3000);
-
-    setTimeout(() => setPhase('ready'), 6000);
     awardAchievements(nextLocation);
   }, [moveToLocation, setAnimating]);
 
@@ -803,7 +801,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
 
   const nextLocation = getNextLocation(currentLocation);
   const isJourneyComplete = currentLocation === 'vancouver-return';
-  const showGoButton = !isJourneyComplete && nextLocation && mapLoaded && (phase === 'idle' || phase === 'ready') && !hideGoButton;
+  const showGoButton = !isJourneyComplete && nextLocation && mapLoaded && (phase === 'idle' || phase === 'exploring' || phase === 'ready') && !hideGoButton;
   const nextLocName = nextLocation ? LOCATIONS[nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation]?.name : '';
 
   // Distance from home
