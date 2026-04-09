@@ -43,6 +43,7 @@ export default function GamePage() {
   const [menuPanel, setMenuPanel] = useState<MenuPanel>('none');
   const [activeGame, setActiveGame] = useState<ActiveGame>(null);
   const [showIntro, setShowIntro] = useState(false);
+  const [voPlaying, setVOPlaying] = useState(false);
   const [isLandscape, setIsLandscape] = useState(true);
   const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void } | null>(null);
   const { resetGame, earnedBadges, currentLocation, isMuted } = useGameStore();
@@ -69,8 +70,9 @@ export default function GamePage() {
   useEffect(() => {
     if (currentLocation === 'vancouver' || isMuted) return;
     const cityKey = currentLocation === 'vancouver-return' ? 'home' : currentLocation;
+    setVOPlaying(true);
     const timer = setTimeout(() => {
-      playArrivalAudio(cityKey);
+      playArrivalAudio(cityKey, undefined, () => setVOPlaying(false));
     }, 3500);
     return () => clearTimeout(timer);
   }, [currentLocation, isMuted]);
@@ -96,7 +98,8 @@ export default function GamePage() {
     setShowIntro(false);
     soundManager.fanfare();
     if (!isMuted) {
-      playLocalAudio('intro');
+      setVOPlaying(true);
+      playLocalAudio('intro', undefined, () => setVOPlaying(false));
     }
   };
 
@@ -123,6 +126,7 @@ export default function GamePage() {
         onCityTap={handleCityTap}
         onPOITap={handlePOITap}
         onMapReady={(controls) => { mapControlsRef.current = controls; }}
+        hideGoButton={voPlaying || showIntro}
       />
 
       {/* ===== INTRO SCREEN ===== */}

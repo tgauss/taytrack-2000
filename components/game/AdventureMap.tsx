@@ -47,9 +47,10 @@ interface AdventureMapProps {
   onCityTap: (cityId: string) => void;
   onPOITap?: (poi: POI) => void;
   onMapReady?: (controls: { flyBackToCity: () => void; flyToPOI: (poi: POI) => void }) => void;
+  hideGoButton?: boolean;
 }
 
-export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapProps) {
+export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: AdventureMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Record<string, mapboxgl.Marker>>({});
@@ -587,7 +588,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
 
   const nextLocation = getNextLocation(currentLocation);
   const isJourneyComplete = currentLocation === 'vancouver-return';
-  const showGoButton = !isJourneyComplete && nextLocation && mapLoaded && (phase === 'idle' || phase === 'ready');
+  const showGoButton = !isJourneyComplete && nextLocation && mapLoaded && (phase === 'idle' || phase === 'ready') && !hideGoButton;
   const nextLocName = nextLocation ? LOCATIONS[nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation]?.name : '';
 
   // Distance from home
