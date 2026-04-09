@@ -6,15 +6,15 @@ import { soundManager } from '@/lib/sounds';
 import { useGameStore } from '@/lib/game-state';
 
 const ITEMS = ['🧸', '👕', '📱', '🧴', '👖', '🧦', '📚', '🎒', '🧢', '⌚', '🪥', '👟'];
-const BOX_WIDTH = 120; // px
 
 interface FallingItem {
   id: number;
   emoji: string;
-  x: number; // percent 0-100
-  y: number; // percent 0-100
+  x: number;
+  y: number;
   speed: number;
   caught: boolean;
+  missed: boolean;
 }
 
 interface PackingGameProps {
@@ -22,66 +22,138 @@ interface PackingGameProps {
 }
 
 export function PackingGame({ onClose }: PackingGameProps) {
-  const [items, setItems] = useState<FallingItem[]>([]);
-  const [boxX, setBoxX] = useState(50); // percent
   const [score, setScore] = useState(0);
   const [missed, setMissed] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
+  const [catchEffect, setCatchEffect] = useState<{ x: number; y: number; id: number } | null>(null);
+
   const gameAreaRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const boxXRef = useRef(50);
+  const itemsRef = useRef<FallingItem[]>([]);
+  const scoreRef = useRef(0);
+  const missedRef = useRef(0);
+  const gameOverRef = useRef(false);
+  const lastSpawnRef = useRef(0);
+  const animFrameRef = useRef<number>(0);
+
   const { setPackingScore, packingHighScore, earnBadge, showAchievement } = useGameStore();
 
-  // Spawn items — gentle pace for kids
-  useEffect(() => {
-    if (gameOver) return;
-    const spawnRate = Math.max(1200, 2000 - score * 30);
-    const interval = setInterval(() => {
-      setItems(prev => [...prev, {
-        id: Date.now() + Math.random(),
-        emoji: ITEMS[Math.floor(Math.random() * ITEMS.length)],
-        x: 10 + Math.random() * 80,
-        y: -8,
-        speed: 0.4 + Math.random() * 0.2, // Slow for kids
-        caught: false,
-      }]);
-    }, spawnRate);
-    return () => clearInterval(interval);
-  }, [gameOver, score]);
+  // Game loop — uses canvas for zero-lag rendering
+  const gameLoop = useCallback((timestamp: number) => {
+    if (gameOverRef.current) return;
 
-  // Move items down + check catches
-  useEffect(() => {
-    if (gameOver) return;
-    const interval = setInterval(() => {
-      setItems(prev => {
-        const updated = prev.map(item => {
-          if (item.caught) return item;
-          const newY = item.y + item.speed;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) { animFrameRef.current = requestAnimationFrame(gameLoop); return; }
 
-          // Check if item reached the box zone (bottom 12%)
-          if (newY >= 82 && newY <= 95) {
-            const itemCenter = item.x;
-            const boxLeft = boxX - 10;
-            const boxRight = boxX + 10;
-            if (itemCenter >= boxLeft && itemCenter <= boxRight) {
-              soundManager.pop();
-              setScore(s => s + 1);
-              return { ...item, y: newY, caught: true };
-            }
-          }
+    const w = canvas.width;
+    const h = canvas.height;
 
-          // Missed — fell off screen
-          if (newY > 100) {
-            setMissed(m => m + 1);
-            return { ...item, y: newY, caught: true }; // Mark as done
-          }
-
-          return { ...item, y: newY };
+    // Spawn new items — one at a time, every 2.5-3.5 seconds
+    const spawnRate = Math.max(2000, 3500 - scoreRef.current * 50);
+    if (timestamp - lastSpawnRef.current > spawnRate) {
+      // Only spawn if fewer than 3 items on screen
+      const activeCount = itemsRef.current.filter(i => !i.caught && !i.missed).length;
+      if (activeCount < 3) {
+        itemsRef.current.push({
+          id: timestamp,
+          emoji: ITEMS[Math.floor(Math.random() * ITEMS.length)],
+          x: 15 + Math.random() * 70,
+          y: -5,
+          speed: 0.15 + Math.random() * 0.08,
+          caught: false,
+          missed: false,
         });
-        return updated.filter(item => !(item.caught && item.y > 100));
-      });
-    }, 50);
-    return () => clearInterval(interval);
-  }, [gameOver, boxX]);
+        lastSpawnRef.current = timestamp;
+      }
+    }
+
+    // Clear canvas
+    ctx.clearRect(0, 0, w, h);
+
+    // Update and draw items
+    const boxX = boxXRef.current;
+    const boxLeft = boxX - 12;
+    const boxRight = boxX + 12;
+
+    itemsRef.current = itemsRef.current.filter(item => {
+      if (item.caught || item.missed) return false;
+
+      item.y += item.speed;
+
+      // Check catch
+      if (item.y >= 80 && item.y <= 92) {
+        if (item.x >= boxLeft && item.x <= boxRight) {
+          item.caught = true;
+          scoreRef.current++;
+          setScore(scoreRef.current);
+          soundManager.pop();
+          setCatchEffect({ x: item.x, y: item.y, id: item.id });
+          setTimeout(() => setCatchEffect(null), 400);
+          return false;
+        }
+      }
+
+      // Missed
+      if (item.y > 100) {
+        item.missed = true;
+        missedRef.current++;
+        setMissed(missedRef.current);
+        return false;
+      }
+
+      // Draw item
+      const px = (item.x / 100) * w;
+      const py = (item.y / 100) * h;
+      ctx.font = `${Math.round(w * 0.08)}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(item.emoji, px, py);
+
+      return true;
+    });
+
+    // Draw box
+    const boxPx = (boxX / 100) * w;
+    const boxPy = h * 0.88;
+    ctx.font = `${Math.round(w * 0.12)}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('📦', boxPx, boxPy);
+
+    // Draw catch zone indicator
+    ctx.fillStyle = 'rgba(250, 204, 21, 0.15)';
+    ctx.fillRect((boxLeft / 100) * w, h * 0.82, ((boxRight - boxLeft) / 100) * w, h * 0.12);
+
+    animFrameRef.current = requestAnimationFrame(gameLoop);
+  }, []);
+
+  // Start game loop
+  useEffect(() => {
+    if (gameOver) return;
+    gameOverRef.current = false;
+    lastSpawnRef.current = performance.now();
+    animFrameRef.current = requestAnimationFrame(gameLoop);
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [gameOver, gameLoop]);
+
+  // Resize canvas
+  useEffect(() => {
+    const resize = () => {
+      if (canvasRef.current && gameAreaRef.current) {
+        const rect = gameAreaRef.current.getBoundingClientRect();
+        canvasRef.current.width = rect.width * 2; // 2x for retina
+        canvasRef.current.height = rect.height * 2;
+        canvasRef.current.style.width = `${rect.width}px`;
+        canvasRef.current.style.height = `${rect.height}px`;
+      }
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
 
   // Timer
   useEffect(() => {
@@ -89,50 +161,41 @@ export function PackingGame({ onClose }: PackingGameProps) {
     const interval = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
+          gameOverRef.current = true;
           setGameOver(true);
-          setPackingScore(score);
-          if (score >= 15) { earnBadge('box-champion'); setTimeout(() => showAchievement('box-champion'), 500); }
+          setPackingScore(scoreRef.current);
+          if (scoreRef.current >= 10) { earnBadge('box-champion'); setTimeout(() => showAchievement('box-champion'), 500); }
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameOver, score, setPackingScore, earnBadge, showAchievement]);
+  }, [gameOver, setPackingScore, earnBadge, showAchievement]);
 
-  // Touch/mouse move — drag the box
+  // Touch/mouse — move box (directly update ref, no state)
   const handleMove = useCallback((clientX: number) => {
     if (!gameAreaRef.current) return;
     const rect = gameAreaRef.current.getBoundingClientRect();
-    const x = ((clientX - rect.left) / rect.width) * 100;
-    setBoxX(Math.max(10, Math.min(90, x)));
+    boxXRef.current = Math.max(12, Math.min(88, ((clientX - rect.left) / rect.width) * 100));
   }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
-    handleMove(e.touches[0].clientX);
-  }, [handleMove]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (e.buttons > 0) handleMove(e.clientX);
-  }, [handleMove]);
 
   const handlePlayAgain = () => {
     soundManager.tap();
-    setItems([]); setScore(0); setMissed(0);
-    setTimeLeft(30); setGameOver(false); setBoxX(50);
+    itemsRef.current = [];
+    scoreRef.current = 0; missedRef.current = 0;
+    setScore(0); setMissed(0); setTimeLeft(30);
+    setGameOver(false); boxXRef.current = 50;
   };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-gradient-to-b from-indigo-900 via-purple-900 to-purple-950 select-none"
-    >
+      className="fixed inset-0 z-50 bg-gradient-to-b from-indigo-900 via-purple-900 to-purple-950 select-none">
+
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-black/30">
         <button onClick={() => { soundManager.tap(); onClose(); }}
-          className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl touch-manipulation">
-          ✕
-        </button>
+          className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl touch-manipulation">✕</button>
         <div className="flex gap-6 text-white">
           <div className="text-center">
             <div className="text-xs opacity-60">Caught</div>
@@ -149,77 +212,42 @@ export function PackingGame({ onClose }: PackingGameProps) {
         </div>
       </div>
 
-      {/* Game area */}
+      {/* Game canvas */}
       <div
         ref={gameAreaRef}
-        className="absolute inset-0 pt-20 overflow-hidden touch-manipulation"
-        onTouchMove={handleTouchMove}
+        className="absolute inset-0 pt-20"
+        onTouchMove={(e) => { e.preventDefault(); handleMove(e.touches[0].clientX); }}
         onTouchStart={(e) => handleMove(e.touches[0].clientX)}
-        onMouseMove={handleMouseMove}
+        onMouseMove={(e) => handleMove(e.clientX)}
         onMouseDown={(e) => handleMove(e.clientX)}
         style={{ touchAction: 'none' }}
       >
-        {/* Falling items */}
-        {items.filter(i => !i.caught).map(item => (
-          <div
-            key={item.id}
-            className="absolute text-4xl transition-none"
-            style={{
-              left: `${item.x}%`,
-              top: `${item.y}%`,
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            {item.emoji}
-          </div>
-        ))}
+        <canvas ref={canvasRef} className="w-full h-full" />
 
-        {/* Catch effects */}
+        {/* Catch star effect */}
         <AnimatePresence>
-          {items.filter(i => i.caught && i.y < 100).map(item => (
+          {catchEffect && (
             <motion.div
-              key={`caught-${item.id}`}
+              key={catchEffect.id}
               initial={{ scale: 1, opacity: 1 }}
-              animate={{ scale: 2, opacity: 0, y: -30 }}
+              animate={{ scale: 2.5, opacity: 0, y: -40 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
-              className="absolute text-3xl"
-              style={{ left: `${item.x}%`, top: `${item.y}%`, transform: 'translate(-50%, -50%)' }}
+              className="absolute text-4xl pointer-events-none"
+              style={{ left: `${catchEffect.x}%`, top: `${catchEffect.y}%`, transform: 'translate(-50%, -50%)' }}
             >
               ⭐
             </motion.div>
-          ))}
+          )}
         </AnimatePresence>
 
-        {/* The box — drag left/right */}
-        <div
-          className="absolute"
-          style={{
-            left: `${boxX}%`,
-            bottom: '5%',
-            transform: 'translateX(-50%)',
-            width: `${BOX_WIDTH}px`,
-          }}
-        >
-          <div className="text-center">
-            <div className="text-6xl">📦</div>
-            {/* Visual guide — wider catch zone indicator */}
-            <div className="h-1 bg-yellow-400/30 rounded-full mx-2 -mt-1" />
-          </div>
-        </div>
-
-        {/* Drag hint — shows briefly */}
-        {score === 0 && timeLeft > 27 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute bottom-[18%] left-0 right-0 text-center"
-          >
-            <motion.div animate={{ x: [-30, 30, -30] }} transition={{ duration: 2, repeat: Infinity }}>
-              <span className="text-3xl">👆</span>
+        {/* Drag hint */}
+        {score === 0 && missed === 0 && timeLeft > 27 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="absolute bottom-[22%] left-0 right-0 text-center pointer-events-none">
+            <motion.div animate={{ x: [-40, 40, -40] }} transition={{ duration: 2, repeat: Infinity }}>
+              <span className="text-4xl">👆</span>
             </motion.div>
-            <p className="text-white/40 text-sm mt-1">Slide to catch!</p>
           </motion.div>
         )}
       </div>
@@ -227,13 +255,13 @@ export function PackingGame({ onClose }: PackingGameProps) {
       {/* Game Over */}
       <AnimatePresence>
         {gameOver && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="absolute inset-0 bg-black/70 flex items-center justify-center p-8 z-30">
             <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }}
               className="bg-slate-900 rounded-3xl p-8 text-center max-w-sm w-full border border-white/10">
-              <div className="text-6xl mb-4">{score >= 15 ? '🏆' : '📦'}</div>
+              <div className="text-6xl mb-4">{score >= 10 ? '🏆' : '📦'}</div>
               <h2 className="text-3xl font-bold text-white mb-4">
-                {score >= 15 ? 'Amazing!' : score >= 8 ? 'Great Job!' : 'Nice Try!'}
+                {score >= 10 ? 'Amazing!' : score >= 5 ? 'Great Job!' : 'Nice Try!'}
               </h2>
               <div className="flex justify-center gap-8 mb-4">
                 <div className="text-center">
@@ -252,13 +280,9 @@ export function PackingGame({ onClose }: PackingGameProps) {
               )}
               <div className="flex gap-3">
                 <motion.button onClick={handlePlayAgain} whileTap={{ scale: 0.95 }}
-                  className="flex-1 py-5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-2xl font-bold text-xl touch-manipulation">
-                  🔄
-                </motion.button>
+                  className="flex-1 py-5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-2xl font-bold text-2xl touch-manipulation">🔄</motion.button>
                 <motion.button onClick={() => { soundManager.tap(); onClose(); }} whileTap={{ scale: 0.95 }}
-                  className="flex-1 py-5 bg-white/10 text-white rounded-2xl font-bold text-xl touch-manipulation">
-                  ✅
-                </motion.button>
+                  className="flex-1 py-5 bg-white/10 text-white rounded-2xl font-bold text-2xl touch-manipulation">✅</motion.button>
               </div>
             </motion.div>
           </motion.div>
