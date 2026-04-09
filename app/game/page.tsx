@@ -13,6 +13,7 @@ import { CityExplorer } from '@/components/game/CityExplorer';
 import { ArrivalCelebration } from '@/components/game/ArrivalCelebration';
 import { SendHug } from '@/components/game/SendHug';
 import { PreTripCountdown } from '@/components/game/PreTripCountdown';
+import { KiddoConnect } from '@/components/game/KiddoConnect';
 import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore, type GameLocation } from '@/lib/game-state';
@@ -36,7 +37,7 @@ const AdventureMap = dynamic(
 );
 
 type ActiveGame = 'packing' | 'memory' | null;
-type MenuPanel = 'none' | 'menu' | 'badges' | 'journal' | 'games';
+type MenuPanel = 'none' | 'menu' | 'badges' | 'journal' | 'games' | 'connect';
 
 // Arrival narrations are now pre-generated audio files in /public/audio/
 
@@ -271,6 +272,13 @@ export default function GamePage() {
                 <span className="font-bold text-sm text-foreground">Dad&apos;s Story</span>
               </button>
               <button
+                onClick={() => { soundManager.tap(); setMenuPanel('none'); setMenuPanel('connect'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 touch-manipulation text-left"
+              >
+                <span className="text-2xl">💌</span>
+                <span className="font-bold text-sm text-foreground">Talk to Dad</span>
+              </button>
+              <button
                 onClick={() => { soundManager.tap(); setMenuPanel('none'); setMenuPanel('games'); }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 touch-manipulation text-left"
               >
@@ -374,6 +382,9 @@ export default function GamePage() {
 
       {/* Landmark Explorer */}
       <LandmarkExplorer poi={selectedPOI} onClose={handleClosePOI} />
+
+      {/* Kiddo Connect — messaging */}
+      <KiddoConnect isOpen={menuPanel === 'connect'} onClose={() => setMenuPanel('none')} />
 
       {/* Send Dad a Hug */}
       {!activeGame && !showIntro && <SendHug />}
