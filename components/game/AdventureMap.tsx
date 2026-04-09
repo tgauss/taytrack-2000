@@ -606,13 +606,57 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       <SleepsCounter />
 
       <AnimatePresence>
-        {showGoButton && (
+        {showGoButton && currentLocation === 'vancouver' && (
+          <motion.button
+            key="blast-off-btn"
+            initial={{ opacity: 0, y: 40, scale: 0.5 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.5 }}
+            transition={{ type: 'spring', damping: 12, stiffness: 150, delay: 0.5 }}
+            onClick={handleGoNext}
+            disabled={isAnimating}
+            className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20 touch-manipulation disabled:opacity-50"
+            whileTap={{ scale: 0.9 }}
+          >
+            <motion.div
+              className="px-16 py-8 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 rounded-full shadow-2xl"
+              animate={{
+                scale: [1, 1.08, 1],
+                boxShadow: [
+                  '0 0 30px rgba(251,191,36,0.4), 0 0 60px rgba(249,115,22,0.2)',
+                  '0 0 50px rgba(251,191,36,0.7), 0 0 100px rgba(249,115,22,0.4)',
+                  '0 0 30px rgba(251,191,36,0.4), 0 0 60px rgba(249,115,22,0.2)',
+                ],
+              }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <span className="flex items-center gap-3 text-black font-bold text-3xl">
+                <motion.span
+                  animate={{ rotate: [0, -15, 15, 0], y: [0, -5, 0] }}
+                  transition={{ duration: 1, repeat: Infinity, delay: 0.5 }}
+                  className="text-4xl"
+                >
+                  ✈️
+                </motion.span>
+                BLAST OFF!
+                <motion.span
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                  className="text-4xl"
+                >
+                  🚀
+                </motion.span>
+              </span>
+            </motion.div>
+          </motion.button>
+        )}
+        {showGoButton && currentLocation !== 'vancouver' && (
           <motion.button key="go-btn" initial={{ opacity: 0, y: 20, scale: 0.8 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.8 }}
             onClick={handleGoNext} disabled={isAnimating}
             className="absolute bottom-28 left-1/2 -translate-x-1/2 px-10 py-5 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-2xl rounded-full shadow-2xl disabled:opacity-50 z-20 touch-manipulation"
             style={{ minWidth: 220, minHeight: 64 }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <span className="flex items-center gap-3">
-              {currentLocation === 'vancouver' ? '✈️ BLAST OFF!' : `GO to ${nextLocName}!`}
+              GO to {nextLocName}!
               <span className="text-3xl">👆</span>
             </span>
           </motion.button>
