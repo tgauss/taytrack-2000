@@ -63,6 +63,8 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
   const [mapLoaded, setMapLoaded] = useState(false);
   const [phase, setPhase] = useState<ExplorationPhase>('idle');
   const [welcomeCity, setWelcomeCity] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState('init');
+  const isDebug = typeof window !== 'undefined' && window.location.search.includes('debug=true');
 
   const {
     currentLocation,
@@ -140,32 +142,58 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
   // ---- MAP INITIALIZATION ----
   useEffect(() => {
     if (!mapContainer.current || mapInitialized.current) return;
-    mapInitialized.current = true;
 
-    const startLocKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
-    const startLoc = LOCATIONS[startLocKey] || LOCATIONS.vancouver;
+    // Wait for container to have real dimensions before initializing map
+    // (next/dynamic can mount the component before layout is complete on iPad)
+    const rect = mapContainer.current.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      console.warn('[TAYTRACK] Map container has zero dimensions, deferring init...');
+      const retryTimer = setInterval(() => {
+        if (!mapContainer.current) return;
+        const r = mapContainer.current.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          clearInterval(retryTimer);
+          mapInitialized.current = false; // Allow the effect to re-run
+          // Force re-render to trigger the effect again
+          setMapLoaded(prev => prev); // No-op state update to re-trigger
+          // Directly initialize
+          initMap();
+        }
+      }, 100);
+      setTimeout(() => clearInterval(retryTimer), 10000); // Give up after 10s
+      return () => clearInterval(retryTimer);
+    }
 
-    // Start at HOME when fresh, otherwise at current city
-    const isAtStart = currentLocation === 'vancouver';
-    const initialCenter: [number, number] = isAtStart
-      ? [LOCATIONS.vancouver.lng, LOCATIONS.vancouver.lat]
-      : [startLoc.lng, startLoc.lat];
+    initMap();
 
-    // Use streets-v12 for maximum iPad compatibility (Standard style has issues on some iPads)
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: initialCenter,
-      zoom: isAtStart ? 16 : ARRIVAL_ZOOM,
-      pitch: isAtStart ? 55 : ARRIVAL_PITCH,
-      bearing: 0,
-      antialias: true,
-    });
+    function initMap() {
+      if (!mapContainer.current || mapInitialized.current) return;
+      mapInitialized.current = true;
 
-    // Force resize after a delay — fixes iPad blank map issue
-    setTimeout(() => { map.current?.resize(); }, 500);
-    setTimeout(() => { map.current?.resize(); }, 1500);
-    setTimeout(() => { map.current?.resize(); }, 3000);
+      const startLocKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
+      const startLoc = LOCATIONS[startLocKey] || LOCATIONS.vancouver;
+
+      // Start at HOME when fresh, otherwise at current city
+      const isAtStart = currentLocation === 'vancouver';
+      const initialCenter: [number, number] = isAtStart
+        ? [LOCATIONS.vancouver.lng, LOCATIONS.vancouver.lat]
+        : [startLoc.lng, startLoc.lat];
+
+      // Use streets-v12 for maximum iPad compatibility (Standard style has issues on some iPads)
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: initialCenter,
+        zoom: isAtStart ? 16 : ARRIVAL_ZOOM,
+        pitch: isAtStart ? 55 : ARRIVAL_PITCH,
+        bearing: 0,
+        antialias: true,
+      });
+
+      // Force resize after a delay — fixes iPad blank map issue
+      setTimeout(() => { map.current?.resize(); }, 500);
+      setTimeout(() => { map.current?.resize(); }, 1500);
+      setTimeout(() => { map.current?.resize(); }, 3000);
 
     const onMapLoad = () => {
       if (!map.current) return;
@@ -372,10 +400,11 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
     map.current.on('error', (e: unknown) => console.error('[TAYTRACK] Map error:', e));
 
     // Resize observer — catches iPad layout changes
-    const resizeObserver = new ResizeObserver(() => { map.current?.resize(); });
-    if (mapContainer.current) resizeObserver.observe(mapContainer.current);
+    const resizeObs = new ResizeObserver(() => { map.current?.resize(); });
+    if (mapContainer.current) resizeObs.observe(mapContainer.current);
+    } // end initMap
 
-    return () => { stopOrbit(); resizeObserver.disconnect(); if (map.current) { map.current.remove(); map.current = null; } mapInitialized.current = false; };
+    return () => { stopOrbit(); if (map.current) { map.current.remove(); map.current = null; } mapInitialized.current = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -386,8 +415,9 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
     const loc = LOCATIONS[locKey];
     if (loc) {
       vehicleMarkerRef.current.setLngLat([loc.lng, loc.lat]);
+      // Show car at home (first leg is drive to airport, not flight)
       const nextLoc = getNextLocation(currentLocation);
-      if (nextLoc) {
+      if (nextLoc && currentLocation !== 'vancouver') {
         const segType = getSegmentType(currentLocation, nextLoc);
         const emojiDiv = vehicleMarkerRef.current.getElement().querySelector('.vehicle-emoji');
         if (emojiDiv) emojiDiv.innerHTML = segType === 'flight' ? '✈️' : '🚗';
