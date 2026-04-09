@@ -6,7 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, getNextLocation, getSegmentType, type GameLocation } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
-import { playTravelAudio, stopElevenLabsSpeech } from '@/lib/voice';
+import { playTravelAudio, playLocalAudio, stopElevenLabsSpeech } from '@/lib/voice';
 import { getDriveRoute, AIRPORTS, getAirportToHotelRoute, type POI } from '@/lib/poi-data';
 import { animateRoute, zoomInToRoute, FLIGHT_CONFIG, DRIVE_CONFIG, SHORT_DRIVE_CONFIG, AIRPORT_TO_HOTEL_CONFIG, SEGMENT_DURATIONS } from '@/lib/cinematic';
 import { ProgressCaterpillar } from './ProgressCaterpillar';
@@ -415,17 +415,136 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
     if (segmentType === 'flight') {
       soundManager.whoosh();
 
-      // Use airport coordinates for flights
+      // SPECIAL: Return flight goes OMA → SEA → PDX (two legs + layover)
+      const isReturnFlight = fromKey === 'omaha';
+
+      if (isReturnFlight && map.current) {
+        const omaCoord = AIRPORTS.oma.lngLat;
+        const seaCoord = AIRPORTS.sea.lngLat;
+        const pdxCoord = AIRPORTS.pdx.lngLat;
+
+        vehicleMarkerRef.current?.setLngLat(omaCoord);
+
+        // Leg 1: OMA → SEA
+        const arc1 = generateArc(omaCoord, seaCoord, 100);
+        stopElevenLabsSpeech();
+        playLocalAudio('flight-omaha-seattle');
+
+        zoomInToRoute(map.current, arc1, 2500).then(() => {
+          if (!map.current) return;
+          activeAnimRef.current = animateRoute(map.current, arc1, {
+            ...FLIGHT_CONFIG,
+            duration: SEGMENT_DURATIONS['omaha-vancouver-return'] || 15000,
+            startBearing: getBearing(omaCoord[1], omaCoord[0], seaCoord[1], seaCoord[0]),
+          }, {
+            onProgress: (phase, pos) => {
+              vehicleMarkerRef.current?.setLngLat(pos);
+              try {
+                const src = map.current?.getSource('airplane-model') as any;
+                if (src?.setModels) {
+                  const alt = Math.sin(phase * Math.PI) * 10000;
+                  const aIdx = Math.min(Math.floor(phase * arc1.length) + 3, arc1.length - 1);
+                  const bearing = getBearing(pos[1], pos[0], arc1[aIdx][1], arc1[aIdx][0]);
+                  src.setModels({ plane: { uri: AIRPLANE_MODEL_URI, position: pos, orientation: [0, phase < 0.15 ? 15 : phase > 0.85 ? -15 : 0, -bearing] } });
+                  map.current?.setFeatureState({ source: 'airplane-model', sourceLayer: '', id: 'plane' }, { 'z-elevation': alt });
+                }
+              } catch {}
+            },
+            onComplete: () => {
+              // Landed in Seattle — play layover VO
+              stopElevenLabsSpeech();
+              playLocalAudio('layover-seattle');
+              vehicleMarkerRef.current?.setLngLat(seaCoord);
+
+              // Brief pause at Seattle (show the airport)
+              map.current?.flyTo({ center: seaCoord, zoom: 12, pitch: 45, duration: 2000 });
+
+              setTimeout(() => {
+                if (!map.current) return;
+                // Leg 2: SEA → PDX
+                stopElevenLabsSpeech();
+                playLocalAudio('flight-seattle-pdx');
+                soundManager.whoosh();
+
+                const arc2 = generateArc(seaCoord, pdxCoord, 60);
+                zoomInToRoute(map.current!, arc2, 1500).then(() => {
+                  if (!map.current) return;
+                  activeAnimRef.current = animateRoute(map.current, arc2, {
+                    ...FLIGHT_CONFIG,
+                    duration: SEGMENT_DURATIONS['seattle-return-pdx'] || 17000,
+                    startBearing: getBearing(seaCoord[1], seaCoord[0], pdxCoord[1], pdxCoord[0]),
+                  }, {
+                    onProgress: (phase, pos) => {
+                      vehicleMarkerRef.current?.setLngLat(pos);
+                      try {
+                        const src = map.current?.getSource('airplane-model') as any;
+                        if (src?.setModels) {
+                          const alt = Math.sin(phase * Math.PI) * 5000;
+                          const aIdx = Math.min(Math.floor(phase * arc2.length) + 3, arc2.length - 1);
+                          const bearing = getBearing(pos[1], pos[0], arc2[aIdx][1], arc2[aIdx][0]);
+                          src.setModels({ plane: { uri: AIRPLANE_MODEL_URI, position: pos, orientation: [0, phase < 0.15 ? 15 : phase > 0.85 ? -15 : 0, -bearing] } });
+                          map.current?.setFeatureState({ source: 'airplane-model', sourceLayer: '', id: 'plane' }, { 'z-elevation': alt });
+                        }
+                      } catch {}
+                    },
+                    onComplete: () => {
+                      // Landed at PDX — drive home
+                      try { map.current?.setLayoutProperty('airplane-3d', 'visibility', 'none'); } catch {}
+                      const vEl = vehicleMarkerRef.current?.getElement();
+                      if (vEl) vEl.style.display = '';
+                      if (emojiDiv) emojiDiv.innerHTML = '🚗';
+
+                      const homeRoute = getAirportToHotelRoute('vancouver');
+                      if (homeRoute && homeRoute.length >= 2 && map.current) {
+                        soundManager.vroom();
+                        map.current.flyTo({
+                          center: homeRoute[0], zoom: 14, pitch: 60,
+                          bearing: getBearing(homeRoute[0][1], homeRoute[0][0], homeRoute[5][1], homeRoute[5][0]),
+                          duration: 2000,
+                        });
+                        try { map.current?.setLayoutProperty('truck-3d', 'visibility', 'visible'); } catch {}
+                        setTimeout(() => {
+                          if (!map.current) return;
+                          activeAnimRef.current = animateRoute(map.current, homeRoute, AIRPORT_TO_HOTEL_CONFIG, {
+                            onProgress: (_p, pos) => {
+                              vehicleMarkerRef.current?.setLngLat(pos);
+                              try {
+                                const truckSrc = map.current?.getSource('truck-model') as any;
+                                if (truckSrc?.setModels) {
+                                  const idx = Math.min(Math.floor(_p * homeRoute.length), homeRoute.length - 2);
+                                  const bearing = getBearing(pos[1], pos[0], homeRoute[idx+1][1], homeRoute[idx+1][0]);
+                                  truckSrc.setModels({ truck: { uri: TRUCK_MODEL_URI, position: pos, orientation: [0, 0, -bearing] } });
+                                }
+                              } catch {}
+                            },
+                            onComplete: () => {
+                              try { map.current?.setLayoutProperty('truck-3d', 'visibility', 'none'); } catch {}
+                              finishTravel(nextLocation, toLoc);
+                            },
+                          });
+                        }, 2200);
+                      } else {
+                        finishTravel(nextLocation, toLoc);
+                      }
+                    },
+                  });
+                });
+              }, 14000); // Wait for layover VO (~13s)
+            },
+          });
+        });
+        return;
+      }
+
+      // Normal flights (outbound)
       const flightKey = `${fromKey}-${toKey}`;
       const flightRoute = FLIGHT_ROUTES[flightKey];
       const fromCoord = flightRoute?.from || [fromLoc.lng, fromLoc.lat] as [number, number];
       const toCoord = flightRoute?.to || [toLoc.lng, toLoc.lat] as [number, number];
       const arcPath = generateArc(fromCoord, toCoord, 100);
 
-      // Move vehicle to departure airport
       vehicleMarkerRef.current?.setLngLat(fromCoord);
 
-      // Zoom in to route area, then run cinematic animation
       zoomInToRoute(map.current, arcPath, 2500).then(() => {
         if (!map.current) return;
 

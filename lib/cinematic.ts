@@ -94,7 +94,8 @@ export const SEGMENT_DURATIONS: Record<string, number> = {
   'tulsa-lincoln': 27000,      // audio: 26.3s
   'lincoln-roca': 7000,        // audio: 6.7s
   'roca-omaha': 6500,          // audio: 5.9s
-  'omaha-vancouver-return': 33000, // audio: 31.9s (longer — describes full OMA→SEA→PDX journey)
+  'omaha-vancouver-return': 15000, // Now just OMA→SEA leg (14.7s audio)
+  'seattle-return-pdx': 17000, // SEA→PDX leg (16.4s audio)
 };
 
 export const DRIVE_CONFIG: CinematicConfig = {

@@ -19,7 +19,10 @@ const LOCAL_AUDIO: Record<string, string> = {
   'drive-tulsa-lincoln': '/audio/drive-tulsa-lincoln.mp3',
   'drive-lincoln-roca': '/audio/drive-lincoln-roca.mp3',
   'drive-roca-omaha': '/audio/drive-roca-omaha.mp3',
-  'flight-omaha-home': '/audio/flight-omaha-home.mp3',
+  'flight-omaha-home': '/audio/flight-omaha-home.mp3', // Legacy single VO
+  'flight-omaha-seattle': '/audio/flight-omaha-seattle.mp3',
+  'layover-seattle': '/audio/layover-seattle.mp3',
+  'flight-seattle-pdx': '/audio/flight-seattle-pdx.mp3',
 
   // Good Night Dad
   'goodnight-1': '/audio/goodnight-1.mp3',
@@ -235,7 +238,8 @@ const TRAVEL_AUDIO: Record<string, string> = {
   'tulsa-lincoln': 'drive-tulsa-lincoln',
   'lincoln-roca': 'drive-lincoln-roca',
   'roca-omaha': 'drive-roca-omaha',
-  'omaha-vancouver-return': 'flight-omaha-home',
+  // Return flight handled separately with chained VOs — see AdventureMap
+  // 'omaha-vancouver-return': handled in component
 };
 
 /**
