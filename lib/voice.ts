@@ -32,6 +32,31 @@ const LOCAL_AUDIO: Record<string, string> = {
   'journal-day7': '/audio/journal-day7.mp3',
   'journal-day8': '/audio/journal-day8.mp3',
 
+  // Full landmark narrations
+  'tulsa-golden-driller-full': '/audio/tulsa-golden-driller-full.mp3',
+  'tulsa-center-universe-full': '/audio/tulsa-center-universe-full.mp3',
+  'tulsa-penguins-full': '/audio/tulsa-penguins-full.mp3',
+  'tulsa-cave-house-full': '/audio/tulsa-cave-house-full.mp3',
+  'tulsa-tunnels-full': '/audio/tulsa-tunnels-full.mp3',
+  'tulsa-elephant-law-full': '/audio/tulsa-elephant-law-full.mp3',
+  'tulsa-time-capsule-full': '/audio/tulsa-time-capsule-full.mp3',
+  'tulsa-yield-sign-full': '/audio/tulsa-yield-sign-full.mp3',
+  'tulsa-route66-full': '/audio/tulsa-route66-full.mp3',
+  'tulsa-gathering-place-full': '/audio/tulsa-gathering-place-full.mp3',
+  'tulsa-blue-whale-full': '/audio/tulsa-blue-whale-full.mp3',
+  'lincoln-capitol-full': '/audio/lincoln-capitol-full.mp3',
+  'lincoln-stadium-full': '/audio/lincoln-stadium-full.mp3',
+  'lincoln-morrill-full': '/audio/lincoln-morrill-full.mp3',
+  'lincoln-haymarket-full': '/audio/lincoln-haymarket-full.mp3',
+  'lincoln-sunken-gardens-full': '/audio/lincoln-sunken-gardens-full.mp3',
+  'roca-berry-farm-full': '/audio/roca-berry-farm-full.mp3',
+  'roca-warehouse-full': '/audio/roca-warehouse-full.mp3',
+  'omaha-zoo-full': '/audio/omaha-zoo-full.mp3',
+  'omaha-bridge-full': '/audio/omaha-bridge-full.mp3',
+  'omaha-durham-full': '/audio/omaha-durham-full.mp3',
+  'omaha-old-market-full': '/audio/omaha-old-market-full.mp3',
+  'omaha-bigboy-full': '/audio/omaha-bigboy-full.mp3',
+
   // City arrivals
   'arrive-seattle': '/audio/arrive-seattle.mp3',
   'arrive-tulsa': '/audio/arrive-tulsa.mp3',
@@ -72,31 +97,31 @@ const LOCAL_AUDIO: Record<string, string> = {
   'omaha-bigboy-fact': '/audio/omaha-bigboy-fact.mp3',
 };
 
-// Map POI IDs to their audio keys
-const POI_AUDIO: Record<string, string> = {
-  'tulsa-golden-driller': 'tulsa-golden-driller-fact',
-  'tulsa-center-universe': 'tulsa-center-universe-fact',
-  'tulsa-penguins': 'tulsa-penguins-fact',
-  'tulsa-cave-house': 'tulsa-cave-house-fact',
-  'tulsa-tunnels': 'tulsa-tunnels-fact',
-  'tulsa-elephant-law': 'tulsa-elephant-law-fact',
-  'tulsa-time-capsule': 'tulsa-time-capsule-fact',
-  'tulsa-yield-sign': 'tulsa-yield-sign-fact',
-  'tulsa-route66': 'tulsa-route66-fact',
-  'tulsa-gathering-place': 'tulsa-gathering-place-fact',
-  'tulsa-blue-whale': 'tulsa-blue-whale-fact',
-  'lincoln-capitol': 'lincoln-capitol-fact',
-  'lincoln-stadium': 'lincoln-stadium-fact',
-  'lincoln-morrill': 'lincoln-morrill-fact',
-  'lincoln-haymarket': 'lincoln-haymarket-fact',
-  'lincoln-sunken-gardens': 'lincoln-sunken-gardens-fact',
-  'roca-berry-farm': 'roca-berry-farm-fact',
-  'roca-warehouse': 'roca-warehouse-fact',
-  'omaha-zoo': 'omaha-zoo-fact',
-  'omaha-bridge': 'omaha-bridge-fact',
-  'omaha-durham': 'omaha-durham-fact',
-  'omaha-old-market': 'omaha-old-market-fact',
-  'omaha-bigboy': 'omaha-bigboy-fact',
+// Full landmark narrations (combined fun fact + DYK + history)
+const POI_FULL_AUDIO: Record<string, string> = {
+  'tulsa-golden-driller': 'tulsa-golden-driller-full',
+  'tulsa-center-universe': 'tulsa-center-universe-full',
+  'tulsa-penguins': 'tulsa-penguins-full',
+  'tulsa-cave-house': 'tulsa-cave-house-full',
+  'tulsa-tunnels': 'tulsa-tunnels-full',
+  'tulsa-elephant-law': 'tulsa-elephant-law-full',
+  'tulsa-time-capsule': 'tulsa-time-capsule-full',
+  'tulsa-yield-sign': 'tulsa-yield-sign-full',
+  'tulsa-route66': 'tulsa-route66-full',
+  'tulsa-gathering-place': 'tulsa-gathering-place-full',
+  'tulsa-blue-whale': 'tulsa-blue-whale-full',
+  'lincoln-capitol': 'lincoln-capitol-full',
+  'lincoln-stadium': 'lincoln-stadium-full',
+  'lincoln-morrill': 'lincoln-morrill-full',
+  'lincoln-haymarket': 'lincoln-haymarket-full',
+  'lincoln-sunken-gardens': 'lincoln-sunken-gardens-full',
+  'roca-berry-farm': 'roca-berry-farm-full',
+  'roca-warehouse': 'roca-warehouse-full',
+  'omaha-zoo': 'omaha-zoo-full',
+  'omaha-bridge': 'omaha-bridge-full',
+  'omaha-durham': 'omaha-durham-full',
+  'omaha-old-market': 'omaha-old-market-full',
+  'omaha-bigboy': 'omaha-bigboy-full',
 };
 
 // Currently playing audio
@@ -134,15 +159,15 @@ export function playLocalAudio(
 }
 
 /**
- * Play the fun fact audio for a POI.
+ * Play the full narration for a POI (fun fact + DYK + history combined).
  */
 export function playPOIAudio(
   poiId: string,
   onStart?: () => void,
   onEnd?: () => void,
 ): boolean {
-  const audioKey = POI_AUDIO[poiId];
-  if (audioKey) return playLocalAudio(audioKey, onStart, onEnd);
+  const fullKey = POI_FULL_AUDIO[poiId];
+  if (fullKey) return playLocalAudio(fullKey, onStart, onEnd);
   return false;
 }
 
