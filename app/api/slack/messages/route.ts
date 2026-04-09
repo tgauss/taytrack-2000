@@ -47,7 +47,11 @@ export async function GET() {
         timestamp: msg.ts,
         time: new Date(Number(msg.ts) * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
         hasImage: msg.files?.some((f: { mimetype?: string }) => f.mimetype?.startsWith('image/')),
-        imageUrl: msg.files?.find((f: { mimetype?: string }) => f.mimetype?.startsWith('image/'))?.thumb_360,
+        imageUrl: (() => {
+          const imgFile = msg.files?.find((f: { mimetype?: string }) => f.mimetype?.startsWith('image/'));
+          const slackUrl = imgFile?.thumb_360 || imgFile?.url_private;
+          return slackUrl ? `/api/slack/image?url=${encodeURIComponent(slackUrl)}` : undefined;
+        })(),
         hasAudio: msg.files?.some((f: { mimetype?: string }) => f.mimetype?.startsWith('audio/')),
       }))
       .filter((msg: { text: string; hasImage: boolean; hasAudio: boolean }) =>
