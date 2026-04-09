@@ -10,7 +10,9 @@ interface Message {
   timestamp: string;
   hasImage: boolean;
   imageUrl?: string;
+  hasAudio: boolean;
   fromDad: boolean;
+  fromKids: boolean;
 }
 
 const QUICK_MESSAGES = [
@@ -47,7 +49,7 @@ export default function ConnectPage() {
     try {
       const res = await fetch('/api/slack/messages');
       const data = await res.json();
-      if (data.ok) setMessages((data.messages || []).map((m: Message) => ({ ...m, fromDad: true })).reverse());
+      if (data.ok) setMessages(data.messages || []);
     } catch {}
   }, []);
 
@@ -162,26 +164,34 @@ export default function ConnectPage() {
               key={msg.timestamp || i}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-purple-500/10 border border-purple-500/20 rounded-2xl p-4"
+              className={`flex ${msg.fromKids ? 'justify-end' : 'justify-start'}`}
             >
-              <div className="flex items-start gap-3">
-                <span className="text-xl">👨</span>
-                <div className="flex-1">
-                  <p className="text-base text-white/85 leading-relaxed">{msg.text}</p>
-                  {msg.hasImage && msg.imageUrl && (
-                    <img src={msg.imageUrl} alt="" className="mt-2 rounded-xl max-h-52 object-cover" />
-                  )}
-                  <p className="text-xs text-white/25 mt-2">{msg.time}</p>
+              <div className={`max-w-[85%] rounded-2xl p-4 ${
+                msg.fromKids
+                  ? 'bg-cyan-500/15 border border-cyan-500/20'
+                  : 'bg-purple-500/10 border border-purple-500/20'
+              }`}>
+                <div className="flex items-start gap-2">
+                  <span className="text-lg">{msg.fromKids ? '👧' : '👨'}</span>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-white/40 mb-1">{msg.fromKids ? 'You' : 'Dad'}</p>
+                    {msg.text && <p className="text-base text-white/85 leading-relaxed">{msg.text}</p>}
+                    {msg.hasImage && msg.imageUrl && (
+                      <img src={msg.imageUrl} alt="" className="mt-2 rounded-xl max-h-52 object-cover w-full" />
+                    )}
+                    {msg.hasAudio && <p className="text-sm text-cyan-400 mt-1">🎤 Voice message</p>}
+                    <p className="text-xs text-white/20 mt-2">{msg.time}</p>
+                  </div>
                 </div>
+                {msg.fromDad && msg.text && (
+                  <button
+                    onClick={() => readAloud(msg.text)}
+                    className="mt-2 w-full py-3 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/25 rounded-xl font-bold text-sm text-purple-300 touch-manipulation flex items-center justify-center gap-2"
+                  >
+                    🔊 Read it to me!
+                  </button>
+                )}
               </div>
-              {msg.text && (
-                <button
-                  onClick={() => readAloud(msg.text)}
-                  className="mt-2 w-full py-3 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/25 rounded-xl font-bold text-sm text-purple-300 touch-manipulation flex items-center justify-center gap-2"
-                >
-                  🔊 Read it to me!
-                </button>
-              )}
             </motion.div>
           ))}
           <div ref={messagesEndRef} />
