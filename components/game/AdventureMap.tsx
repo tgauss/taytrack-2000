@@ -162,8 +162,15 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       antialias: true,
     });
 
+    // Force resize after a delay — fixes iPad blank map issue
+    setTimeout(() => { map.current?.resize(); }, 500);
+    setTimeout(() => { map.current?.resize(); }, 1500);
+    setTimeout(() => { map.current?.resize(); }, 3000);
+
     const onMapLoad = () => {
       if (!map.current) return;
+      // Resize again when style loads — critical for iPad
+      map.current.resize();
       setMapLoaded(true);
 
       // Add 3D terrain (skip on mobile — can cause GPU issues)
@@ -364,7 +371,11 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
 
     map.current.on('error', (e: unknown) => console.error('[TAYTRACK] Map error:', e));
 
-    return () => { stopOrbit(); if (map.current) { map.current.remove(); map.current = null; } mapInitialized.current = false; };
+    // Resize observer — catches iPad layout changes
+    const resizeObserver = new ResizeObserver(() => { map.current?.resize(); });
+    if (mapContainer.current) resizeObserver.observe(mapContainer.current);
+
+    return () => { stopOrbit(); resizeObserver.disconnect(); if (map.current) { map.current.remove(); map.current = null; } mapInitialized.current = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -418,8 +429,11 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
     const fromKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
     const toKey = nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation;
 
-    // Play in-flight/driving narration
-    playTravelAudio(fromKey, toKey);
+    // Play in-flight/driving narration (skip for departure — drive-to-airport handles its own VO)
+    const isDepartureFromHome = fromKey === 'vancouver' && segmentType === 'flight';
+    if (!isDepartureFromHome) {
+      playTravelAudio(fromKey, toKey);
+    }
     const fromLoc = LOCATIONS[fromKey];
     const toLoc = LOCATIONS[toKey];
     if (!fromLoc || !toLoc) return;
