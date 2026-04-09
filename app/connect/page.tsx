@@ -161,6 +161,37 @@ export default function ConnectPage() {
     sendMessage('📸', dataUrl);
   };
 
+  const [recordingTime, setRecordingTime] = useState(0);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoStopRef = useRef<NodeJS.Timeout | null>(null);
+
+  const playDictationSound = () => {
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+      // Second beep
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.frequency.value = 1100;
+      osc2.type = 'sine';
+      gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.18);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.33);
+      osc2.start(ctx.currentTime + 0.18);
+      osc2.stop(ctx.currentTime + 0.33);
+    } catch {}
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -170,17 +201,40 @@ export default function ConnectPage() {
       recorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const reader = new FileReader();
-        reader.onloadend = () => sendMessage('', undefined, reader.result as string);
+        reader.onloadend = () => sendMessage('🎤', undefined, reader.result as string);
         reader.readAsDataURL(blob);
         stream.getTracks().forEach(t => t.stop());
       };
+      playDictationSound();
       recorder.start();
       mediaRecorderRef.current = recorder;
       setRecording(true);
+      setRecordingTime(15);
+
+      // Countdown timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(t => {
+          if (t <= 1) {
+            stopRecording();
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+
+      // Auto-stop after 15 seconds
+      autoStopRef.current = setTimeout(() => stopRecording(), 15000);
     } catch {}
   };
 
-  const stopRecording = () => { mediaRecorderRef.current?.stop(); setRecording(false); };
+  const stopRecording = () => {
+    playDictationSound();
+    mediaRecorderRef.current?.stop();
+    setRecording(false);
+    setRecordingTime(0);
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (autoStopRef.current) clearTimeout(autoStopRef.current);
+  };
 
   return (
     <main className="min-h-screen text-white flex flex-col relative">
@@ -335,20 +389,56 @@ export default function ConnectPage() {
           </div>
         )}
 
-        {/* Voice recording — big and clear */}
+        {/* Voice recording — full screen, unmissable stop button, countdown */}
         {recording && (
-          <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 px-8">
-            <motion.div animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-8xl mb-8">🎤</motion.div>
-            <p className="text-2xl font-bold text-red-400 mb-8">Recording your message...</p>
+          <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-red-950/50 to-slate-950 px-8">
+            {/* Pulsing mic */}
+            <motion.div
+              animate={{ scale: [1, 1.3, 1] }}
+              transition={{ duration: 0.8, repeat: Infinity }}
+              className="relative mb-6"
+            >
+              <span className="text-8xl">🎤</span>
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                animate={{ scale: [1, 2.5], opacity: [0.3, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+                style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.4) 0%, transparent 70%)' }}
+              />
+            </motion.div>
+
+            {/* Countdown */}
+            <motion.div
+              className="text-5xl font-bold text-white mb-3"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              {recordingTime}
+            </motion.div>
+            <p className="text-lg text-red-300 mb-10">Recording... tap to send!</p>
+
+            {/* BIG stop/send button — entire width, can't miss */}
             <motion.button
               onClick={stopRecording}
-              className="px-12 py-5 bg-red-500 text-white font-bold text-xl rounded-full touch-manipulation"
-              whileTap={{ scale: 0.95 }}
-              animate={{ boxShadow: ['0 0 20px rgba(239,68,68,0.3)', '0 0 40px rgba(239,68,68,0.6)', '0 0 20px rgba(239,68,68,0.3)'] }}
+              className="w-full max-w-xs py-6 bg-red-500 text-white font-bold text-2xl rounded-2xl touch-manipulation shadow-2xl"
+              whileTap={{ scale: 0.93 }}
+              animate={{
+                boxShadow: ['0 0 30px rgba(239,68,68,0.3)', '0 0 60px rgba(239,68,68,0.6)', '0 0 30px rgba(239,68,68,0.3)'],
+              }}
               transition={{ boxShadow: { duration: 1, repeat: Infinity } }}
             >
-              ⏹️ Send it!
+              ⏹️ SEND IT!
             </motion.button>
+
+            {/* Progress bar */}
+            <div className="w-full max-w-xs mt-6 h-2 bg-white/10 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-red-500 rounded-full"
+                initial={{ width: '100%' }}
+                animate={{ width: '0%' }}
+                transition={{ duration: 15, ease: 'linear' }}
+              />
+            </div>
           </div>
         )}
 

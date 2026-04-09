@@ -121,6 +121,28 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
     sendMessage('📸', canvas.toDataURL('image/jpeg', 0.85));
   };
 
+  const [recordingTime, setRecordingTime] = useState(0);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoStopRef = useRef<NodeJS.Timeout | null>(null);
+
+  const playBeep = () => {
+    try {
+      const ctx = new AudioContext();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880; o.type = 'sine';
+      g.gain.setValueAtTime(0.3, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.15);
+      const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+      o2.connect(g2); g2.connect(ctx.destination);
+      o2.frequency.value = 1100; o2.type = 'sine';
+      g2.gain.setValueAtTime(0.3, ctx.currentTime + 0.18);
+      g2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.33);
+      o2.start(ctx.currentTime + 0.18); o2.stop(ctx.currentTime + 0.33);
+    } catch {}
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -130,19 +152,29 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
       recorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const reader = new FileReader();
-        reader.onloadend = () => sendMessage('', undefined, reader.result as string);
+        reader.onloadend = () => sendMessage('🎤', undefined, reader.result as string);
         reader.readAsDataURL(blob);
         stream.getTracks().forEach(t => t.stop());
       };
+      playBeep();
       recorder.start();
       mediaRecorderRef.current = recorder;
       setRecording(true);
+      setRecordingTime(15);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(t => { if (t <= 1) { stopRecording(); return 0; } return t - 1; });
+      }, 1000);
+      autoStopRef.current = setTimeout(() => stopRecording(), 15000);
     } catch {}
   };
 
   const stopRecording = () => {
+    playBeep();
     mediaRecorderRef.current?.stop();
     setRecording(false);
+    setRecordingTime(0);
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (autoStopRef.current) clearTimeout(autoStopRef.current);
   };
 
   const handleClose = () => {
@@ -318,16 +350,23 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
                   </div>
                 )}
 
-                {/* Voice recording */}
+                {/* Voice recording — big countdown + stop */}
                 {recording && (
-                  <div className="text-center py-8">
-                    <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-7xl mb-6">🎤</motion.div>
-                    <p className="text-xl font-bold text-red-400 mb-6">Recording...</p>
-                    <motion.button onClick={stopRecording} whileTap={{ scale: 0.95 }}
-                      className="px-10 py-5 bg-red-500 text-white font-bold text-xl rounded-full touch-manipulation"
-                      animate={{ boxShadow: ['0 0 20px rgba(239,68,68,0.3)', '0 0 40px rgba(239,68,68,0.6)', '0 0 20px rgba(239,68,68,0.3)'] }}
+                  <div className="text-center py-6">
+                    <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 0.8, repeat: Infinity }} className="text-7xl mb-4 relative inline-block">
+                      🎤
+                      <motion.div className="absolute inset-0 rounded-full" animate={{ scale: [1, 2.5], opacity: [0.3, 0] }}
+                        transition={{ duration: 1, repeat: Infinity }} style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.4) 0%, transparent 70%)' }} />
+                    </motion.div>
+                    <motion.div className="text-4xl font-bold text-white mb-2" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+                      {recordingTime}
+                    </motion.div>
+                    <p className="text-base text-red-300 mb-6">Recording... tap to send!</p>
+                    <motion.button onClick={stopRecording} whileTap={{ scale: 0.93 }}
+                      className="w-full py-5 bg-red-500 text-white font-bold text-xl rounded-2xl touch-manipulation shadow-2xl"
+                      animate={{ boxShadow: ['0 0 30px rgba(239,68,68,0.3)', '0 0 60px rgba(239,68,68,0.6)', '0 0 30px rgba(239,68,68,0.3)'] }}
                       transition={{ boxShadow: { duration: 1, repeat: Infinity } }}>
-                      ⏹️ Done!
+                      ⏹️ SEND IT!
                     </motion.button>
                   </div>
                 )}
