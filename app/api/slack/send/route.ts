@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const SLACK_TOKEN = process.env.SLACK_BOT_TOKEN || process.env.NEXT_SLACK_TOKEN || '';
-const CHANNEL_ID = process.env.SLACK_CHANNEL_ID || process.env.NEXT_SLACK_CHANNEL || '';
+const SLACK_TOKEN = (process.env.SLACK_BOT_TOKEN || process.env.NEXT_SLACK_TOKEN || '').trim();
+const CHANNEL_ID = (process.env.SLACK_CHANNEL_ID || process.env.NEXT_SLACK_CHANNEL || '').trim();
 
 export async function POST(request: NextRequest) {
   if (!SLACK_TOKEN || !CHANNEL_ID) {
