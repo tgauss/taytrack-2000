@@ -181,12 +181,17 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/dark-v11',
+        style: 'mapbox://styles/mapbox/standard',
         center: initialCenter,
         zoom: isAtStart ? 16 : ARRIVAL_ZOOM,
         pitch: isAtStart ? 55 : ARRIVAL_PITCH,
         bearing: 0,
         antialias: true,
+        config: {
+          basemap: {
+            lightPreset: 'dark',
+          },
+        },
       });
 
       // Force resize after a delay — fixes iPad blank map issue
