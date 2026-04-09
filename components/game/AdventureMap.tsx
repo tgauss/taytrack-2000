@@ -422,16 +422,16 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
     const emojiDiv = vehicleMarkerRef.current?.getElement().querySelector('.vehicle-emoji');
     if (emojiDiv) emojiDiv.innerHTML = segmentType === 'flight' ? '✈️' : '🚗';
 
-    // Show/hide 3D models + emoji marker
+    // Show/hide 3D models — emoji marker always stays visible as fallback
     try {
       const hasAirplane = !!map.current.getLayer('airplane-3d');
       const hasTruck = !!map.current.getLayer('truck-3d');
       if (hasAirplane) map.current.setLayoutProperty('airplane-3d', 'visibility', segmentType === 'flight' ? 'visible' : 'none');
       if (hasTruck) map.current.setLayoutProperty('truck-3d', 'visibility', segmentType === 'drive' ? 'visible' : 'none');
-      // Hide emoji marker when 3D model is active
-      const vehicleEl = vehicleMarkerRef.current?.getElement();
-      if (vehicleEl) vehicleEl.style.display = (hasAirplane || hasTruck) ? 'none' : '';
     } catch {}
+    // Always show emoji marker (3D models overlay on top when supported)
+    const vehicleEl = vehicleMarkerRef.current?.getElement();
+    if (vehicleEl) vehicleEl.style.display = '';
 
     setAnimating(true);
     setPhase('traveling');
