@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { playLocalAudio, stopElevenLabsSpeech } from '@/lib/voice';
+import { playLocalAudio, stopElevenLabsSpeech, unlockAudio } from '@/lib/voice';
 import { useGameStore } from '@/lib/game-state';
 import Link from 'next/link';
 
@@ -26,6 +26,7 @@ export function PreTripCountdown() {
   if (daysLeft === null) return null;
 
   const handleListen = () => {
+    unlockAudio(); // Unlock audio on iOS with this user gesture
     if (isMuted) return;
     stopElevenLabsSpeech();
     const key = daysLeft === 0 ? 'countdown-today' : `countdown-${Math.min(daysLeft, 4)}`;

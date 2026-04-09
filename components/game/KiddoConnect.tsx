@@ -113,12 +113,16 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    const maxSize = 640;
+    const vw = video.videoWidth || 640;
+    const vh = video.videoHeight || 480;
+    const scale = Math.min(maxSize / vw, maxSize / vh, 1);
+    canvas.width = Math.round(vw * scale);
+    canvas.height = Math.round(vh * scale);
     const ctx = canvas.getContext('2d');
     if (ctx) ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     streamRef.current?.getTracks().forEach(t => t.stop());
-    sendMessage('📸', canvas.toDataURL('image/jpeg', 0.85));
+    sendMessage('📸', canvas.toDataURL('image/jpeg', 0.6));
   };
 
   const [recordingTime, setRecordingTime] = useState(0);

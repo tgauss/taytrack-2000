@@ -143,6 +143,29 @@ const POI_FULL_AUDIO: Record<string, string> = {
 
 // Currently playing audio
 let currentAudio: HTMLAudioElement | null = null;
+let audioUnlocked = false;
+
+/**
+ * Call this on the first user gesture (tap) to unlock audio on iOS Safari.
+ * Creates and plays a silent audio element, which satisfies Safari's autoplay policy.
+ */
+export function unlockAudio() {
+  if (audioUnlocked) return;
+  try {
+    // Play a tiny silent audio to unlock the audio context
+    const audio = new Audio();
+    audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    audio.volume = 0.01;
+    audio.play().then(() => {
+      audioUnlocked = true;
+      audio.pause();
+    }).catch(() => {});
+
+    // Also unlock AudioContext for sound effects
+    const ctx = new AudioContext();
+    ctx.resume().then(() => ctx.close()).catch(() => {});
+  } catch {}
+}
 
 export type VoiceType = 'narrator' | 'excited' | 'storyteller';
 
@@ -171,7 +194,13 @@ export function playLocalAudio(
   audio.onended = () => { onEnd?.(); currentAudio = null; };
   audio.onerror = () => { onEnd?.(); currentAudio = null; };
 
-  audio.play().catch(() => { onEnd?.(); currentAudio = null; });
+  audio.play().catch((err) => {
+    console.warn('[TAYTRACK] Audio play blocked (likely autoplay policy):', err?.message);
+    // On iOS, autoplay is blocked until user interacts.
+    // Fire onEnd so the UI doesn't get stuck waiting.
+    onEnd?.();
+    currentAudio = null;
+  });
   return true;
 }
 

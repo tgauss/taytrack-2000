@@ -19,7 +19,7 @@ import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore, type GameLocation } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
-import { speakText, stopElevenLabsSpeech, playArrivalAudio, playLocalAudio } from '@/lib/voice';
+import { speakText, stopElevenLabsSpeech, playArrivalAudio, playLocalAudio, unlockAudio } from '@/lib/voice';
 import type { POI } from '@/lib/poi-data';
 
 const AdventureMap = dynamic(
@@ -121,6 +121,8 @@ export default function GamePage() {
   };
 
   const dismissIntro = () => {
+    // This tap unlocks audio on iOS Safari — must happen before any auto-play
+    unlockAudio();
     setShowIntro(false);
     soundManager.fanfare();
     if (!isMuted) {

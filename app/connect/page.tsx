@@ -48,6 +48,7 @@ export default function ConnectPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sendError, setSendError] = useState(false);
   const [recording, setRecording] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [tapbackTarget, setTapbackTarget] = useState<string | null>(null);
@@ -119,17 +120,27 @@ export default function ConnectPage() {
   const sendMessage = async (text: string, imageBase64?: string, audioBase64?: string) => {
     if (atLimit) return;
     setSending(true);
+    setSendError(false);
     try {
-      await fetch('/api/slack/send', {
+      const res = await fetch('/api/slack/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, imageBase64, audioBase64, senderName: 'The Kids 💕' }),
       });
-      incrementMsgCount();
-      setSent(true);
-      setTimeout(() => setSent(false), 2000);
-      fetchMessages();
-    } catch {}
+      const data = await res.json();
+      if (data.ok) {
+        incrementMsgCount();
+        setSent(true);
+        setTimeout(() => setSent(false), 2000);
+        fetchMessages();
+      } else {
+        setSendError(true);
+        setTimeout(() => setSendError(false), 3000);
+      }
+    } catch {
+      setSendError(true);
+      setTimeout(() => setSendError(false), 3000);
+    }
     setSending(false);
     setCameraActive(false);
   };
@@ -157,15 +168,17 @@ export default function ConnectPage() {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const c = canvasRef.current;
-    // Use actual video dimensions, fallback to reasonable defaults
-    c.width = video.videoWidth || 640;
-    c.height = video.videoHeight || 480;
+    // Resize to max 640px to keep file small (avoids Vercel 4.5MB limit)
+    const maxSize = 640;
+    const vw = video.videoWidth || 640;
+    const vh = video.videoHeight || 480;
+    const scale = Math.min(maxSize / vw, maxSize / vh, 1);
+    c.width = Math.round(vw * scale);
+    c.height = Math.round(vh * scale);
     const ctx = c.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, c.width, c.height);
-    }
+    if (ctx) ctx.drawImage(video, 0, 0, c.width, c.height);
     streamRef.current?.getTracks().forEach(t => t.stop());
-    const dataUrl = c.toDataURL('image/jpeg', 0.85);
+    const dataUrl = c.toDataURL('image/jpeg', 0.6); // 60% quality — small enough for upload
     sendMessage('📸', dataUrl);
   };
 
@@ -363,11 +376,16 @@ export default function ConnectPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Sent confirmation */}
+        {/* Sent confirmation / Error */}
         <AnimatePresence>
           {sent && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-center py-2">
               <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-sm font-bold">✅ Sent to Dad!</span>
+            </motion.div>
+          )}
+          {sendError && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-center py-2">
+              <span className="bg-red-500/20 text-red-400 px-4 py-2 rounded-full text-sm font-bold">😕 Oops! Try again?</span>
             </motion.div>
           )}
         </AnimatePresence>
