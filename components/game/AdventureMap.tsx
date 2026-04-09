@@ -8,7 +8,7 @@ import { useGameStore, getNextLocation, getSegmentType, type GameLocation } from
 import { soundManager } from '@/lib/sounds';
 import { playTravelAudio, stopElevenLabsSpeech } from '@/lib/voice';
 import { getDriveRoute, AIRPORTS, getAirportToHotelRoute, type POI } from '@/lib/poi-data';
-import { animateRoute, zoomInToRoute, FLIGHT_CONFIG, DRIVE_CONFIG, SHORT_DRIVE_CONFIG, AIRPORT_TO_HOTEL_CONFIG } from '@/lib/cinematic';
+import { animateRoute, zoomInToRoute, FLIGHT_CONFIG, DRIVE_CONFIG, SHORT_DRIVE_CONFIG, AIRPORT_TO_HOTEL_CONFIG, SEGMENT_DURATIONS } from '@/lib/cinematic';
 import { ProgressCaterpillar } from './ProgressCaterpillar';
 import { SleepsCounter } from './SleepsCounter';
 
@@ -421,8 +421,10 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       zoomInToRoute(map.current, arcPath, 2500).then(() => {
         if (!map.current) return;
 
+        const segKey = `${fromKey}-${toKey}`;
         activeAnimRef.current = animateRoute(map.current, arcPath, {
           ...FLIGHT_CONFIG,
+          duration: SEGMENT_DURATIONS[segKey] || FLIGHT_CONFIG.duration,
           startBearing: getBearing(fromCoord[1], fromCoord[0], toCoord[1], toCoord[0]),
         }, {
           onProgress: (phase, pos) => {
@@ -515,7 +517,12 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
       zoomInToRoute(map.current, drivePath, 2000).then(() => {
         if (!map.current) return;
 
-        activeAnimRef.current = animateRoute(map.current, drivePath, isLong ? DRIVE_CONFIG : SHORT_DRIVE_CONFIG, {
+        const driveSegKey = `${fromKey}-${toKey}`;
+        const driveConfig = {
+          ...(isLong ? DRIVE_CONFIG : SHORT_DRIVE_CONFIG),
+          duration: SEGMENT_DURATIONS[driveSegKey] || (isLong ? DRIVE_CONFIG.duration : SHORT_DRIVE_CONFIG.duration),
+        };
+        activeAnimRef.current = animateRoute(map.current, drivePath, driveConfig, {
           onProgress: (_phase, pos) => {
             vehicleMarkerRef.current?.setLngLat(pos);
             // Update truck 3D model position and bearing

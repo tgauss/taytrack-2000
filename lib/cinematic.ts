@@ -76,8 +76,8 @@ export interface CinematicConfig {
 }
 
 export const FLIGHT_CONFIG: CinematicConfig = {
-  duration: 8000,
-  altitude: 2000000, // ~2000km — high enough to see curvature, looks like a real flight
+  duration: 15000, // Default, overridden per segment to match audio
+  altitude: 2000000,
   pitch: 45,
   startBearing: 0,
   bearingRotation: 60,
@@ -85,6 +85,16 @@ export const FLIGHT_CONFIG: CinematicConfig = {
   revealLine: true,
   lineColor: '#00d4ff',
   lineWidth: 5,
+};
+
+// Animation durations matched to pre-generated audio narrations
+export const SEGMENT_DURATIONS: Record<string, number> = {
+  'vancouver-seattle': 15000,  // audio: 14.1s
+  'seattle-tulsa': 23000,      // audio: 22.3s
+  'tulsa-lincoln': 27000,      // audio: 26.3s
+  'lincoln-roca': 7000,        // audio: 6.7s
+  'roca-omaha': 6500,          // audio: 5.9s
+  'omaha-vancouver-return': 15000, // audio: 14.1s
 };
 
 export const DRIVE_CONFIG: CinematicConfig = {
