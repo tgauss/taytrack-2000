@@ -18,6 +18,9 @@ function cleanText(text: string): string {
     .replace(/<#[A-Z0-9|]+>/g, '')
     .replace(/<(https?:\/\/[^|>]+)\|?[^>]*>/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/^(📸|💬|🎤)\s*(The Kids\s*💕:?\s*)/i, '') // Remove "The Kids 💕:" prefix from bot messages
+    .replace(/sent a photo!?\s*/i, '')
+    .replace(/sent a voice message!?\s*/i, '')
     .replace(/:([a-z0-9_]+):/g, (_, name) => SLACK_EMOJI[name] || '')
     .trim();
 }
