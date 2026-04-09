@@ -29,7 +29,7 @@ export async function GET() {
     // Find the most recent !location message from Dad (not bot)
     for (const msg of data.messages || []) {
       const text = (msg.text || '').trim().toLowerCase();
-      if (text.startsWith('!location ') && !msg.bot_id) {
+      if (text.startsWith('!location ')) {
         const locationName = text.replace('!location ', '').trim();
         const loc = LOCATIONS[locationName];
         if (loc) {
