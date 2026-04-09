@@ -4,6 +4,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
+interface Reaction {
+  emoji: string;
+  count: number;
+}
+
 interface Message {
   text: string;
   time: string;
@@ -13,7 +18,10 @@ interface Message {
   hasAudio: boolean;
   fromDad: boolean;
   fromKids: boolean;
+  reactions: Reaction[];
 }
+
+const TAPBACK_EMOJIS = ['❤️', '👍', '😂', '🎉', '😍'];
 
 const QUICK_MESSAGES = [
   { emoji: '❤️', text: 'I love you Dad!' },
@@ -38,6 +46,26 @@ export default function ConnectPage() {
   const [sent, setSent] = useState(false);
   const [recording, setRecording] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const [tapbackTarget, setTapbackTarget] = useState<string | null>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleLongPressStart = (timestamp: string) => {
+    longPressTimer.current = setTimeout(() => setTapbackTarget(timestamp), 400);
+  };
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  };
+  const sendReaction = async (emoji: string, messageTimestamp: string) => {
+    setTapbackTarget(null);
+    try {
+      await fetch('/api/slack/react', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji, messageTimestamp }),
+      });
+      fetchMessages();
+    } catch {}
+  };
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -166,42 +194,85 @@ export default function ConnectPage() {
               animate={{ opacity: 1, y: 0 }}
               className={`flex ${msg.fromKids ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[75%] ${
-                msg.fromKids
-                  ? 'bg-green-500 rounded-2xl rounded-br-md'
-                  : 'bg-white/10 rounded-2xl rounded-bl-md'
-              }`}>
-                {/* Image */}
-                {msg.hasImage && msg.imageUrl && (
-                  <div className="p-1">
-                    <img src={msg.imageUrl} alt="" className="rounded-xl max-h-56 object-cover w-full" />
-                  </div>
-                )}
-
-                {/* Text */}
-                <div className="px-4 py-2.5">
-                  {msg.text && (
-                    <p className={`text-[15px] leading-relaxed ${msg.fromKids ? 'text-white' : 'text-white/90'}`}>
-                      {msg.text}
-                    </p>
+              <div className="relative max-w-[75%]">
+                <div
+                  className={`${
+                    msg.fromKids
+                      ? 'bg-green-500 rounded-2xl rounded-br-md'
+                      : 'bg-white/10 rounded-2xl rounded-bl-md'
+                  }`}
+                  onTouchStart={() => handleLongPressStart(msg.timestamp)}
+                  onTouchEnd={handleLongPressEnd}
+                  onMouseDown={() => handleLongPressStart(msg.timestamp)}
+                  onMouseUp={handleLongPressEnd}
+                  onMouseLeave={handleLongPressEnd}
+                >
+                  {msg.hasImage && msg.imageUrl && (
+                    <div className="p-1">
+                      <img src={msg.imageUrl} alt="" className="rounded-xl max-h-56 object-cover w-full" />
+                    </div>
                   )}
-                  {msg.hasAudio && !msg.text && <p className="text-sm">🎤 Voice message</p>}
-                  <p className={`text-[11px] mt-1 ${msg.fromKids ? 'text-white/50' : 'text-white/25'}`}>
-                    {msg.time}
-                  </p>
+                  <div className="px-4 py-2.5">
+                    {msg.text && (
+                      <p className={`text-[15px] leading-relaxed ${msg.fromKids ? 'text-white' : 'text-white/90'}`}>
+                        {msg.text}
+                      </p>
+                    )}
+                    {msg.hasAudio && !msg.text && <p className="text-sm">🎤 Voice message</p>}
+                    <p className={`text-[11px] mt-1 ${msg.fromKids ? 'text-white/50' : 'text-white/25'}`}>
+                      {msg.time}
+                    </p>
+                  </div>
+                  {msg.fromDad && msg.text && (
+                    <div className="px-3 pb-2">
+                      <button
+                        onClick={() => readAloud(msg.text)}
+                        className="w-full py-2.5 bg-white/10 hover:bg-white/15 rounded-xl font-bold text-xs text-white/60 touch-manipulation flex items-center justify-center gap-1.5"
+                      >
+                        🔊 Read it to me!
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Read aloud — only for Dad's messages */}
-                {msg.fromDad && msg.text && (
-                  <div className="px-3 pb-2">
-                    <button
-                      onClick={() => readAloud(msg.text)}
-                      className="w-full py-2.5 bg-white/10 hover:bg-white/15 rounded-xl font-bold text-xs text-white/60 touch-manipulation flex items-center justify-center gap-1.5"
-                    >
-                      🔊 Read it to me!
-                    </button>
+                {/* Reactions display */}
+                {msg.reactions && msg.reactions.length > 0 && (
+                  <div className={`flex gap-1 mt-1 ${msg.fromKids ? 'justify-end' : 'justify-start'}`}>
+                    {msg.reactions.map((r: Reaction, ri: number) => (
+                      <span key={ri} className="bg-white/10 rounded-full px-2 py-0.5 text-xs">
+                        {r.emoji} {r.count > 1 && r.count}
+                      </span>
+                    ))}
                   </div>
                 )}
+
+                {/* Tapback picker */}
+                <AnimatePresence>
+                  {tapbackTarget === msg.timestamp && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className={`absolute -top-12 ${msg.fromKids ? 'right-0' : 'left-0'} bg-slate-800 border border-white/20 rounded-full px-2 py-1.5 flex gap-1 shadow-xl z-10`}
+                    >
+                      {TAPBACK_EMOJIS.map(emoji => (
+                        <button
+                          key={emoji}
+                          onClick={() => sendReaction(emoji, msg.timestamp)}
+                          className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-lg touch-manipulation active:scale-125 transition-transform"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setTapbackTarget(null)}
+                        className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-xs text-white/40 touch-manipulation"
+                      >
+                        ✕
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           ))}

@@ -35,7 +35,7 @@ export async function GET() {
         if (msg.subtype && SYSTEM_SUBTYPES.has(msg.subtype)) return false;
         return true;
       })
-      .map((msg: { text?: string; ts?: string; user?: string; bot_id?: string; files?: { url_private?: string; mimetype?: string; thumb_360?: string }[] }) => {
+      .map((msg: { text?: string; ts?: string; user?: string; bot_id?: string; reactions?: { name: string; count: number }[]; files?: { url_private?: string; mimetype?: string; thumb_360?: string }[] }) => {
         const isDad = msg.user === DAD_USER_ID && !msg.bot_id;
         const isBot = msg.user === BOT_USER_ID || !!msg.bot_id;
         const text = cleanText(msg.text || '');
@@ -44,15 +44,28 @@ export async function GET() {
         const slackImgUrl = imgFile?.thumb_360 || imgFile?.url_private;
         const audioFile = msg.files?.find((f: { mimetype?: string }) => f.mimetype?.startsWith('audio/'));
 
+        // Convert Slack emoji names to actual emoji
+        const emojiMap: Record<string, string> = {
+          heart: '❤️', '+1': '👍', thumbsup: '👍', joy: '😂', fire: '🔥',
+          tada: '🎉', pray: '🙏', eyes: '👀', rocket: '🚀', star: '⭐',
+          wave: '👋', hugging_face: '🤗', kissing_heart: '😘', sob: '😭',
+          laughing: '😆', heart_eyes: '😍', clap: '👏', raised_hands: '🙌',
+        };
+        const reactions = (msg.reactions || []).map((r: { name: string; count: number }) => ({
+          emoji: emojiMap[r.name] || `:${r.name}:`,
+          count: r.count,
+        }));
+
         return {
           text,
           timestamp: msg.ts,
           time: new Date(Number(msg.ts) * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
           fromDad: isDad,
-          fromKids: isBot, // Bot posts are from the kids
+          fromKids: isBot,
           hasImage: !!imgFile,
           imageUrl: slackImgUrl ? `/api/slack/image?url=${encodeURIComponent(slackImgUrl)}` : undefined,
           hasAudio: !!audioFile,
+          reactions,
         };
       })
       .filter((msg: { text: string; hasImage: boolean; hasAudio: boolean }) =>
