@@ -623,9 +623,11 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         if (!map.current) return;
         vehicleMarkerRef.current?.setLngLat(fromCoord);
 
-        // Play the flight VO
-        stopElevenLabsSpeech();
-        playTravelAudio(fromKey, toKey);
+        // Play the flight VO (only for departure — other flights already started VO at line 447)
+        if (isDeparture) {
+          stopElevenLabsSpeech();
+          playTravelAudio(fromKey, toKey);
+        }
 
         zoomInToRoute(map.current!, arcPath, 2500).then(() => {
         if (!map.current) return;
