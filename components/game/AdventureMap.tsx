@@ -623,12 +623,9 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         if (!map.current) return;
         vehicleMarkerRef.current?.setLngLat(fromCoord);
 
-        // Now play the flight VO and take off
+        // Play the flight VO
         stopElevenLabsSpeech();
-        if (isDeparture) {
-          // The travel VO for vancouver-seattle was already skipped by the drive VO
-          playTravelAudio(fromKey, toKey);
-        }
+        playTravelAudio(fromKey, toKey);
 
         zoomInToRoute(map.current!, arcPath, 2500).then(() => {
         if (!map.current) return;
