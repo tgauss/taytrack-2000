@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { playLocalAudio, stopElevenLabsSpeech, unlockAudio } from '@/lib/voice';
+import { playLocalAudio, unlockAudio } from '@/lib/voice';
 import { useGameStore } from '@/lib/game-state';
 import Link from 'next/link';
 
 export function PreTripCountdown() {
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
   const { isMuted } = useGameStore();
 
   useEffect(() => {
@@ -23,14 +25,23 @@ export function PreTripCountdown() {
   }, []);
 
   // null = trip has started, don't show countdown
-  if (daysLeft === null) return null;
+  if (daysLeft === null || dismissed) return null;
 
   const handleListen = () => {
-    unlockAudio(); // Unlock audio on iOS with this user gesture
+    unlockAudio();
     if (isMuted) return;
-    stopElevenLabsSpeech();
+    setIsSpeaking(true);
     const key = daysLeft === 0 ? 'countdown-today' : `countdown-${Math.min(daysLeft, 4)}`;
-    playLocalAudio(key, () => setIsSpeaking(true), () => setIsSpeaking(false));
+    playLocalAudio(key, undefined, () => setIsSpeaking(false));
+  };
+
+  // Secret bypass: tap the airplane 5 times to skip countdown (for testing)
+  const handleAirplaneTap = () => {
+    const next = tapCount + 1;
+    setTapCount(next);
+    if (next >= 5) {
+      setDismissed(true);
+    }
   };
 
   const emojis = ['✈️', '🚗', '📦', '🤠', '🌽', '🏠'];
@@ -38,11 +49,12 @@ export function PreTripCountdown() {
   return (
     <div className="fixed inset-0 z-[200] bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
       <div className="text-center px-8 max-w-lg">
-        {/* Bouncing airplane */}
+        {/* Bouncing airplane — tap 5x to bypass */}
         <motion.div
           animate={{ y: [0, -20, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="text-8xl mb-6"
+          className="text-8xl mb-6 touch-manipulation"
+          onClick={handleAirplaneTap}
         >
           ✈️
         </motion.div>
@@ -107,6 +119,11 @@ export function PreTripCountdown() {
         <Link href="/" className="text-sm text-white/40 hover:text-white/60">
           Go to main dashboard →
         </Link>
+
+        {/* Subtle bypass hint (only shows after 2 taps) */}
+        {tapCount >= 2 && tapCount < 5 && (
+          <p className="text-xs text-white/10 mt-4">{5 - tapCount} more...</p>
+        )}
       </div>
     </div>
   );
