@@ -12,35 +12,90 @@ interface LandmarkExplorerProps {
   onClose: () => void;
 }
 
+// Each lesson is a step-by-step experience
+type LessonStep = 'photo' | 'funfact' | 'didyouknow' | 'history';
+
+const STEP_ORDER: LessonStep[] = ['photo', 'funfact', 'didyouknow', 'history'];
+
+function getStepsForPoi(poi: POI): LessonStep[] {
+  const steps: LessonStep[] = [];
+  if (poi.imageUrl) steps.push('photo');
+  steps.push('funfact');
+  if (poi.didYouKnow) steps.push('didyouknow');
+  steps.push('history');
+  return steps;
+}
+
 export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
-  const [showLesson, setShowLesson] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { isMuted } = useGameStore();
   const hasAI = isElevenLabsAvailable();
 
+  const steps = poi ? getStepsForPoi(poi) : [];
+  const currentStep = steps[stepIndex] || 'funfact';
+  const isLastStep = stepIndex >= steps.length - 1;
+
+  // Reset on new POI
   useEffect(() => {
-    setShowLesson(false);
+    setStepIndex(0);
     stopElevenLabsSpeech();
     setIsSpeaking(false);
   }, [poi?.id]);
 
-  // Auto-read fun fact
+  // Auto-play TTS for each step
   useEffect(() => {
-    if (poi && !isMuted) {
-      const t = setTimeout(() => speak(poi.funFact, 'excited', () => setIsSpeaking(true), () => setIsSpeaking(false)), 600);
+    if (!poi || isMuted) return;
+    let text = '';
+    if (currentStep === 'photo') text = `Look at this! This is ${poi.name}!`;
+    else if (currentStep === 'funfact') text = poi.funFact;
+    else if (currentStep === 'didyouknow') text = `Did you know? ${poi.didYouKnow}`;
+    else if (currentStep === 'history') text = poi.historyLesson;
+
+    if (text) {
+      const voice = currentStep === 'history' ? 'storyteller' : 'excited';
+      const t = setTimeout(() => speak(text, voice, () => setIsSpeaking(true), () => setIsSpeaking(false)), 400);
       return () => clearTimeout(t);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poi?.id, isMuted]);
+  }, [poi?.id, currentStep, isMuted]);
 
-  const handleSpeak = useCallback((text: string, voice: 'narrator' | 'excited' | 'storyteller' = 'narrator') => {
-    if (isMuted) return;
-    speak(text, voice, () => setIsSpeaking(true), () => setIsSpeaking(false));
-  }, [isMuted]);
+  const handleNext = () => {
+    soundManager.tap();
+    stopElevenLabsSpeech();
+    if (isLastStep) {
+      onClose();
+    } else {
+      setStepIndex(s => s + 1);
+    }
+  };
+
+  const handleBack = () => {
+    soundManager.tap();
+    stopElevenLabsSpeech();
+    if (stepIndex > 0) setStepIndex(s => s - 1);
+  };
 
   const handleClose = () => { stopElevenLabsSpeech(); soundManager.tap(); onClose(); };
 
+  const handleReplay = useCallback(() => {
+    if (!poi || isMuted) return;
+    let text = '';
+    if (currentStep === 'funfact') text = poi.funFact;
+    else if (currentStep === 'didyouknow') text = `Did you know? ${poi.didYouKnow}`;
+    else if (currentStep === 'history') text = poi.historyLesson;
+    else if (currentStep === 'photo') text = `This is ${poi.name}!`;
+    if (text) speak(text, currentStep === 'history' ? 'storyteller' : 'excited', () => setIsSpeaking(true), () => setIsSpeaking(false));
+  }, [poi, currentStep, isMuted]);
+
   if (!poi) return null;
+
+  const stepLabels: Record<LessonStep, string> = {
+    photo: '📸 Look!',
+    funfact: '⭐ Fun Fact',
+    didyouknow: '💡 Did You Know?',
+    history: '📜 History',
+  };
 
   return (
     <AnimatePresence>
@@ -52,189 +107,179 @@ export function LandmarkExplorer({ poi, onClose }: LandmarkExplorerProps) {
           className="fixed inset-0 z-[100]"
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
-          {/* Card — full-width bottom sheet on iPad */}
+          {/* Bottom sheet */}
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 250 }}
-            className="absolute bottom-0 left-0 right-0 max-h-[85vh] flex flex-col"
+            className="absolute bottom-0 left-0 right-0 max-h-[88vh] flex flex-col"
           >
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-12 h-1.5 rounded-full bg-white/30" />
-            </div>
+            <div className="bg-slate-900 rounded-t-[28px] flex flex-col overflow-hidden border-t border-white/10 shadow-2xl">
 
-            <div className="bg-slate-900/98 backdrop-blur-xl rounded-t-[28px] flex flex-col overflow-hidden border-t border-white/10">
-              {/* Hero section with image */}
-              <div className="relative">
-                {poi.imageUrl && (
-                  <div className="w-full h-48 overflow-hidden">
-                    <img src={poi.imageUrl} alt={poi.name} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-                  </div>
-                )}
-
-                {/* Close button */}
-                <button
-                  onClick={handleClose}
-                  className="absolute top-4 right-4 w-11 h-11 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-xl touch-manipulation"
-                >
-                  ✕
-                </button>
-
-                {/* Title overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <div className="flex items-end gap-3">
-                    <motion.span
-                      animate={{ scale: [1, 1.15, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="text-5xl drop-shadow-lg"
-                    >
-                      {poi.emoji}
-                    </motion.span>
-                    <div>
-                      <h2 className="text-2xl font-bold text-white drop-shadow-lg leading-tight">
-                        {poi.name}
-                      </h2>
-                      {isSpeaking && (
-                        <motion.div
-                          animate={{ opacity: [0.5, 1, 0.5] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                          className="text-xs text-cyan-400 mt-1"
-                        >
-                          🔊 Listening...
-                        </motion.div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+              {/* Step indicator dots */}
+              <div className="flex justify-center gap-2 pt-4 pb-2">
+                {steps.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { stopElevenLabsSpeech(); setStepIndex(i); }}
+                    className={`h-2 rounded-full transition-all touch-manipulation ${
+                      i === stepIndex ? 'w-8 bg-cyan-400' : i < stepIndex ? 'w-2 bg-cyan-400/50' : 'w-2 bg-white/20'
+                    }`}
+                  />
+                ))}
               </div>
 
-              {/* Content — scrollable */}
-              <div className="flex-1 overflow-y-auto px-5 pt-4 pb-6 space-y-5 max-h-[50vh]">
+              {/* Step label */}
+              <div className="text-center pb-2">
+                <span className="text-sm font-bold text-white/50">
+                  {stepLabels[currentStep]} ({stepIndex + 1}/{steps.length})
+                </span>
+              </div>
 
-                {/* Fun Fact — big and readable */}
-                <div className="bg-white/5 rounded-2xl p-5">
-                  <p className="text-lg leading-relaxed text-white/90 font-medium">
-                    {poi.funFact}
-                  </p>
-                  <button
-                    onClick={() => handleSpeak(poi.funFact, 'excited')}
-                    disabled={isSpeaking}
-                    className="mt-4 px-6 py-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-full text-base font-bold flex items-center gap-2 disabled:opacity-40 touch-manipulation transition-colors"
-                  >
-                    🔊 {hasAI ? 'Tell Me!' : 'Read to Me'}
-                  </button>
-                </div>
-
-                {/* Did You Know — prominent */}
-                {poi.didYouKnow && (
+              {/* Step content */}
+              <div className="flex-1 overflow-y-auto px-5 pb-4" style={{ maxHeight: '55vh' }}>
+                <AnimatePresence mode="wait">
                   <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="bg-amber-500/10 border-2 border-amber-500/25 rounded-2xl p-5"
+                    key={`${poi.id}-${currentStep}`}
+                    initial={{ opacity: 0, x: 40 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -40 }}
+                    transition={{ duration: 0.25 }}
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">💡</span>
-                      <span className="text-sm font-bold text-amber-400 uppercase tracking-wide">Did You Know?</span>
-                    </div>
-                    <p className="text-base text-white/80 leading-relaxed">{poi.didYouKnow}</p>
-                    <button
-                      onClick={() => handleSpeak(`Did you know? ${poi.didYouKnow}`, 'narrator')}
-                      disabled={isSpeaking}
-                      className="mt-3 px-5 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-full text-sm font-bold flex items-center gap-2 disabled:opacity-40 touch-manipulation transition-colors"
-                    >
-                      🔊 Listen
-                    </button>
-                  </motion.div>
-                )}
+                    {/* PHOTO STEP */}
+                    {currentStep === 'photo' && poi.imageUrl && (
+                      <div className="text-center">
+                        <div className="rounded-2xl overflow-hidden border-2 border-white/10 shadow-lg mb-4">
+                          <img
+                            src={poi.imageUrl}
+                            alt={poi.name}
+                            className="w-full max-h-[40vh] object-contain bg-black"
+                          />
+                        </div>
+                        <div className="flex items-center justify-center gap-3 mb-2">
+                          <motion.span
+                            animate={{ scale: [1, 1.15, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="text-5xl"
+                          >
+                            {poi.emoji}
+                          </motion.span>
+                          <h2 className="text-2xl font-bold text-white">{poi.name}</h2>
+                        </div>
+                      </div>
+                    )}
 
-                {/* History Lesson — expandable */}
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <button
-                    onClick={() => {
-                      soundManager.tap();
-                      const opening = !showLesson;
-                      setShowLesson(opening);
-                      if (opening && !isMuted) setTimeout(() => handleSpeak(poi.historyLesson, 'storyteller'), 300);
-                    }}
-                    className="w-full p-5 bg-indigo-500/10 border-2 border-indigo-500/25 rounded-2xl flex items-center justify-between touch-manipulation hover:bg-indigo-500/15 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">📜</span>
-                      <span className="font-bold text-base text-indigo-400">History Lesson</span>
-                    </div>
-                    <motion.span
-                      animate={{ rotate: showLesson ? 180 : 0 }}
-                      className="text-indigo-400 text-xl"
-                    >
-                      ▼
-                    </motion.span>
-                  </button>
+                    {/* FUN FACT STEP */}
+                    {currentStep === 'funfact' && (
+                      <div className="text-center py-4">
+                        <motion.span
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="text-6xl block mb-5"
+                        >
+                          {poi.emoji}
+                        </motion.span>
+                        <h2 className="text-xl font-bold text-white mb-4">{poi.name}</h2>
+                        <p className="text-xl leading-relaxed text-white/90 font-medium max-w-md mx-auto">
+                          {poi.funFact}
+                        </p>
+                        {isSpeaking && (
+                          <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1, repeat: Infinity }} className="mt-4 text-cyan-400 text-sm">
+                            🔊 Listening...
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
 
-                  <AnimatePresence>
-                    {showLesson && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="bg-indigo-500/5 border-x-2 border-b-2 border-indigo-500/25 rounded-b-2xl p-5 -mt-3">
-                          <p className="text-base text-white/80 leading-relaxed">
+                    {/* DID YOU KNOW STEP */}
+                    {currentStep === 'didyouknow' && (
+                      <div className="py-4">
+                        <div className="bg-amber-500/10 border-2 border-amber-500/25 rounded-2xl p-6 text-center">
+                          <span className="text-5xl block mb-4">💡</span>
+                          <h3 className="text-lg font-bold text-amber-400 uppercase tracking-wide mb-4">Did You Know?</h3>
+                          <p className="text-xl leading-relaxed text-white/90 font-medium max-w-md mx-auto">
+                            {poi.didYouKnow}
+                          </p>
+                          {isSpeaking && (
+                            <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1, repeat: Infinity }} className="mt-4 text-amber-400 text-sm">
+                              🔊 Listening...
+                            </motion.div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* HISTORY LESSON STEP */}
+                    {currentStep === 'history' && (
+                      <div className="py-4">
+                        <div className="bg-indigo-500/10 border-2 border-indigo-500/25 rounded-2xl p-6">
+                          <div className="flex items-center gap-3 mb-4">
+                            <span className="text-3xl">📜</span>
+                            <h3 className="text-lg font-bold text-indigo-400">History Lesson</h3>
+                          </div>
+                          <p className="text-lg leading-relaxed text-white/85">
                             {poi.historyLesson}
                           </p>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleSpeak(poi.historyLesson, 'storyteller'); }}
-                            disabled={isSpeaking}
-                            className="mt-4 px-5 py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-full text-sm font-bold flex items-center gap-2 disabled:opacity-40 touch-manipulation transition-colors"
-                          >
-                            🔊 {hasAI ? 'Tell Me the Story!' : 'Read History'}
-                          </button>
+                          {isSpeaking && (
+                            <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1, repeat: Infinity }} className="mt-4 text-indigo-400 text-sm">
+                              🔊 Reading the story...
+                            </motion.div>
+                          )}
                         </div>
-                      </motion.div>
+                      </div>
                     )}
-                  </AnimatePresence>
-                </motion.div>
-
-                {/* YouTube video */}
-                {poi.youtubeId && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
-                    className="bg-red-500/10 border-2 border-red-500/25 rounded-2xl overflow-hidden"
-                  >
-                    <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                      <iframe
-                        className="absolute inset-0 w-full h-full"
-                        src={`https://www.youtube.com/embed/${poi.youtubeId}?rel=0&modestbranding=1`}
-                        title={`Video about ${poi.name}`}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
                   </motion.div>
-                )}
+                </AnimatePresence>
               </div>
 
-              {/* Bottom action bar */}
-              <div className="p-4 border-t border-white/5 bg-slate-900/95">
-                <button
-                  onClick={handleClose}
-                  className="w-full py-4 bg-white/10 hover:bg-white/15 text-white rounded-2xl font-bold text-base touch-manipulation flex items-center justify-center gap-2 transition-colors"
-                >
-                  🗺️ Back to Map
-                </button>
+              {/* Bottom action bar — BIG buttons for kids */}
+              <div className="p-4 border-t border-white/5 bg-slate-900/98">
+                <div className="flex gap-3">
+                  {/* Replay sound */}
+                  <button
+                    onClick={handleReplay}
+                    disabled={isSpeaking}
+                    className="w-16 h-16 bg-white/10 hover:bg-white/15 rounded-2xl flex items-center justify-center text-2xl touch-manipulation transition-colors disabled:opacity-40 flex-shrink-0"
+                  >
+                    🔊
+                  </button>
+
+                  {/* Back button */}
+                  {stepIndex > 0 && (
+                    <button
+                      onClick={handleBack}
+                      className="w-16 h-16 bg-white/10 hover:bg-white/15 rounded-2xl flex items-center justify-center text-2xl touch-manipulation transition-colors flex-shrink-0"
+                    >
+                      ◀️
+                    </button>
+                  )}
+
+                  {/* NEXT / DONE button — the big one */}
+                  <motion.button
+                    onClick={handleNext}
+                    className={`flex-1 h-16 rounded-2xl font-bold text-xl touch-manipulation transition-colors flex items-center justify-center gap-2 ${
+                      isLastStep
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                        : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                    }`}
+                    whileTap={{ scale: 0.96 }}
+                    animate={!isSpeaking ? {
+                      boxShadow: isLastStep
+                        ? ['0 0 20px rgba(16,185,129,0.3)', '0 0 40px rgba(16,185,129,0.6)', '0 0 20px rgba(16,185,129,0.3)']
+                        : ['0 0 20px rgba(6,182,212,0.3)', '0 0 40px rgba(6,182,212,0.6)', '0 0 20px rgba(6,182,212,0.3)'],
+                    } : {}}
+                    transition={{ boxShadow: { duration: 1.5, repeat: Infinity } }}
+                  >
+                    {isLastStep ? (
+                      <>🗺️ Back to Map</>
+                    ) : (
+                      <>Next ▶️</>
+                    )}
+                  </motion.button>
+                </div>
               </div>
             </div>
           </motion.div>
