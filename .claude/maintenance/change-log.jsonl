@@ -234,3 +234,7 @@
 {"ts":"2026-04-09T05:07:16Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/api/slack/messages/route.ts","tool":"Write"}
 {"ts":"2026-04-09T05:09:45Z","event":"file_write","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/api/slack/image/route.ts","tool":"Write"}
 {"ts":"2026-04-09T05:09:53Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/api/slack/messages/route.ts","tool":"Edit"}
+{"ts":"2026-04-09T05:11:53Z","event":"file_write","path":"/Users/tgauss/.claude/projects/-Users-tgauss-Projects-Claude-Code-TayTrack---Kids-Trip/memory/project_taytrack.md","tool":"Write"}
+{"ts":"2026-04-09T05:12:00Z","event":"file_write","path":"/Users/tgauss/.claude/projects/-Users-tgauss-Projects-Claude-Code-TayTrack---Kids-Trip/memory/MEMORY.md","tool":"Write"}
+{"ts":"2026-04-09T05:13:50Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/api/slack/send/route.ts","tool":"Edit"}
+{"ts":"2026-04-09T05:13:59Z","event":"file_edit","path":"/Users/tgauss/Projects/Claude Code/TayTrack - Kids Trip/app/api/slack/messages/route.ts","tool":"Edit"}
