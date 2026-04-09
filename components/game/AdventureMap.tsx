@@ -22,7 +22,7 @@ const TRUCK_MODEL_URI = 'https://static.poly.pizza/4e925a01-dbb8-4aab-848b-22130
 const LOCATIONS: Record<string, { name: string; lng: number; lat: number; emoji: string; color: string; landmarkLng?: number; landmarkLat?: number }> = {
   vancouver: { name: 'Home', lng: -122.5334, lat: 45.5976, emoji: '🏠', color: '#4ade80' }, // 13418 SE Silver Cir, Vancouver WA
   seattle: { name: 'Seattle', lng: -122.3321, lat: 47.6062, emoji: '☕', color: '#60a5fa', landmarkLng: -122.3493, landmarkLat: 47.6205 }, // Space Needle area
-  tulsa: { name: 'Tulsa', lng: -95.9928, lat: 36.1540, emoji: '🤠', color: '#f97316', landmarkLng: -95.9214, landmarkLat: 36.1289 }, // Golden Driller
+  tulsa: { name: 'Tulsa', lng: -95.9928, lat: 36.1540, emoji: '🤠', color: '#f97316', landmarkLng: -95.9934, landmarkLat: 36.1540 }, // Downtown Tulsa
   lincoln: { name: 'Lincoln', lng: -96.6852, lat: 40.8136, emoji: '🌽', color: '#eab308', landmarkLng: -96.6996, landmarkLat: 40.8088 }, // State Capitol
   roca: { name: 'Roca', lng: -96.6653, lat: 40.6481, emoji: '📦', color: '#a855f7' },
   omaha: { name: 'Omaha', lng: -95.9345, lat: 41.2565, emoji: '✈️', color: '#ec4899' },
