@@ -13,7 +13,7 @@ import { CityExplorer } from '@/components/game/CityExplorer';
 import { ArrivalCelebration } from '@/components/game/ArrivalCelebration';
 import { SendHug } from '@/components/game/SendHug';
 import { PreTripCountdown } from '@/components/game/PreTripCountdown';
-import { KiddoConnect } from '@/components/game/KiddoConnect';
+import { KiddoConnect, useNewMessages } from '@/components/game/KiddoConnect';
 import { PackingGame } from '@/components/games/PackingGame';
 import { MemoryGame } from '@/components/games/MemoryGame';
 import { useGameStore, type GameLocation } from '@/lib/game-state';
@@ -53,6 +53,7 @@ export default function GamePage() {
   const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void; flyToCity?: (cityId: string) => void } | null>(null);
   const { resetGame, earnedBadges, currentLocation, isMuted, moveToLocation } = useGameStore();
   const exploreCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
+  const dadMessageCount = useNewMessages();
   // Show intro only when starting fresh at vancouver (not when resuming mid-trip)
   useEffect(() => {
     if (currentLocation === 'vancouver') {
@@ -237,10 +238,19 @@ export default function GamePage() {
             soundManager.tap();
             setMenuPanel(menuPanel === 'menu' ? 'none' : 'menu');
           }}
-          className="pointer-events-auto w-12 h-12 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-2xl"
+          className="pointer-events-auto relative w-12 h-12 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-2xl"
           whileTap={{ scale: 0.9 }}
         >
           ⭐
+          {dadMessageCount > 0 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+            >
+              💌
+            </motion.span>
+          )}
         </motion.button>
       </div>
 
