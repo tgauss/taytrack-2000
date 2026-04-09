@@ -151,24 +151,15 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       ? [LOCATIONS.vancouver.lng, LOCATIONS.vancouver.lat]
       : [startLoc.lng, startLoc.lat];
 
+    // Use streets-v12 for maximum iPad compatibility (Standard style has issues on some iPads)
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/standard',
+      style: 'mapbox://styles/mapbox/streets-v12',
       center: initialCenter,
       zoom: isAtStart ? 16 : ARRIVAL_ZOOM,
       pitch: isAtStart ? 55 : ARRIVAL_PITCH,
       bearing: 0,
       antialias: true,
-    });
-
-    // Set Standard style config for dusk lighting
-    map.current.on('style.load', () => {
-      if (!map.current) return;
-      try {
-        map.current.setConfigProperty('basemap', 'lightPreset', 'dusk');
-        map.current.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
-        map.current.setConfigProperty('basemap', 'showPlaceLabels', true);
-      } catch { /* config may not be available */ }
     });
 
     const onMapLoad = () => {
@@ -184,6 +175,22 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       // Add sky
       try {
         map.current.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
+      } catch {}
+
+      // 3D buildings
+      try {
+        const layers = map.current.getStyle().layers;
+        const labelLayer = layers?.find(l => l.type === 'symbol' && l.layout && 'text-field' in l.layout);
+        map.current.addLayer({
+          id: '3d-buildings', source: 'composite', 'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'], type: 'fill-extrusion', minzoom: 12,
+          paint: {
+            'fill-extrusion-color': '#aaa',
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.6,
+          },
+        }, labelLayer?.id);
       } catch {}
 
       // Vehicle trail
