@@ -20,7 +20,7 @@ const TRUCK_MODEL_URI = 'https://static.poly.pizza/4e925a01-dbb8-4aab-848b-22130
 
 // City centers — landmarkLng/Lat is where the camera should target on arrival
 const LOCATIONS: Record<string, { name: string; lng: number; lat: number; emoji: string; color: string; landmarkLng?: number; landmarkLat?: number }> = {
-  vancouver: { name: 'Vancouver', lng: -122.6587, lat: 45.6387, emoji: '🏠', color: '#4ade80' },
+  vancouver: { name: 'Vancouver', lng: -122.5565, lat: 45.6050, emoji: '🏠', color: '#4ade80' }, // 13418 SE Silver Cir
   seattle: { name: 'Seattle', lng: -122.3321, lat: 47.6062, emoji: '☕', color: '#60a5fa', landmarkLng: -122.3493, landmarkLat: 47.6205 }, // Space Needle area
   tulsa: { name: 'Tulsa', lng: -95.9928, lat: 36.1540, emoji: '🤠', color: '#f97316', landmarkLng: -95.9214, landmarkLat: 36.1289 }, // Golden Driller
   lincoln: { name: 'Lincoln', lng: -96.6852, lat: 40.8136, emoji: '🌽', color: '#eab308', landmarkLng: -96.6996, landmarkLat: 40.8088 }, // State Capitol
@@ -33,7 +33,7 @@ const LOCATIONS: Record<string, { name: string; lng: number; lat: number; emoji:
 const FLIGHT_ROUTES: Record<string, { from: [number, number]; to: [number, number] }> = {
   'vancouver-seattle': { from: AIRPORTS.pdx.lngLat, to: AIRPORTS.sea.lngLat },
   'seattle-tulsa': { from: AIRPORTS.sea.lngLat, to: AIRPORTS.tul.lngLat },
-  'omaha-vancouver-return': { from: AIRPORTS.oma.lngLat, to: AIRPORTS.pdx.lngLat },
+  'omaha-vancouver-return': { from: AIRPORTS.oma.lngLat, to: AIRPORTS.pdx.lngLat }, // OMA → SEA → PDX (shown as one arc)
 };
 
 // Camera presets

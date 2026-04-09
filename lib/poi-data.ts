@@ -439,7 +439,13 @@ export function getDriveRoute(from: string, to: string): DriveRouteData | null {
   return driveRoutes[`${from}-${to}`] || null;
 }
 
+// PDX Airport to Home (13418 SE Silver Cir, Vancouver WA)
+const PDX_TO_HOME: [number, number][] = [
+  [-122.593353,45.588213],[-122.591634,45.586273],[-122.587872,45.584589],[-122.585182,45.585112],[-122.574651,45.581763],[-122.566957,45.578703],[-122.553705,45.573126],[-122.548063,45.571417],[-122.54526,45.575773],[-122.543643,45.580455],[-122.543616,45.582958],[-122.545239,45.58781],[-122.548284,45.592869],[-122.550741,45.599586],[-122.551307,45.604908],[-122.549399,45.604979],[-122.545679,45.602041],[-122.529273,45.598431],[-122.507154,45.592319],[-122.511459,45.593874],[-122.536225,45.600206],[-122.556481,45.605041],
+];
+
 export function getAirportToHotelRoute(cityId: string): [number, number][] | null {
   if (cityId === 'tulsa') return TUL_AIRPORT_TO_HOTEL;
+  if (cityId === 'vancouver') return PDX_TO_HOME;
   return null;
 }
