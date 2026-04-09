@@ -24,6 +24,13 @@ export function PreTripCountdown() {
     setDaysLeft(diff);
   }, []);
 
+  // Check for ?demo=true in URL
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('demo=true')) {
+      setDismissed(true);
+    }
+  }, []);
+
   // null = trip has started, don't show countdown
   if (daysLeft === null || dismissed) return null;
 
