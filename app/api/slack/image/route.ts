@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const SLACK_TOKEN = process.env.SLACK_BOT_TOKEN!;
+const SLACK_TOKEN = process.env.SLACK_BOT_TOKEN || process.env.NEXT_SLACK_TOKEN || '';
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url');

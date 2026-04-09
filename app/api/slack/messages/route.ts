@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const SLACK_TOKEN = process.env.SLACK_BOT_TOKEN || '';
-const CHANNEL_ID = process.env.SLACK_CHANNEL_ID || 'C0ARVCZ2EBE';
+const SLACK_TOKEN = process.env.SLACK_BOT_TOKEN || process.env.NEXT_SLACK_TOKEN || '';
+const CHANNEL_ID = process.env.SLACK_CHANNEL_ID || process.env.NEXT_SLACK_CHANNEL || '';
 const BOT_USER_ID = 'U0ARVCF8CUC'; // TayTrack bot
 
 // Replace Slack user mentions <@UXXXX> with "Dad"
