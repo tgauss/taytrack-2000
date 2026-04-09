@@ -232,7 +232,7 @@ export default function GamePage() {
 
         {/* Center: Title (smaller) */}
         <div className="bg-card/70 backdrop-blur-sm rounded-full px-4 py-1.5 shadow-md border border-border">
-          <span className="text-sm font-bold text-foreground">TayTrack 2000</span>
+          <span className="text-sm font-bold text-foreground">Kiddos</span>
         </div>
 
         {/* Right: Simple emoji menu button */}

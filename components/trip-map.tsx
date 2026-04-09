@@ -192,7 +192,7 @@ export function TripMap() {
         <div className="absolute inset-0 bg-card flex items-center justify-center z-20">
           <div className="text-center">
             <div className="text-4xl animate-bounce mb-2">🛰️</div>
-            <p className="text-muted-foreground font-mono text-sm">Initializing TayTrack 2000...</p>
+            <p className="text-muted-foreground font-mono text-sm">Initializing Kiddos...</p>
           </div>
         </div>
       )}

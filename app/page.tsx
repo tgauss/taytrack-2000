@@ -62,7 +62,7 @@ export default function HomePage() {
         >
           ✈️
         </motion.div>
-        <h1 className="text-4xl font-bold mb-2">TayTrack 2000</h1>
+        <h1 className="text-4xl font-bold mb-2">Kiddos</h1>
         <p className="text-lg text-white/50">{info.label}</p>
       </motion.div>
 

@@ -45,7 +45,7 @@ export function TayHeader() {
         {/* Title */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4">
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-accent">
-            TayTrack
+            Kiddos
           </span>
           <span className="inline-block ml-2 px-3 py-1 bg-primary text-primary-foreground text-2xl md:text-4xl lg:text-5xl rounded-lg font-mono transform -rotate-2">
             2000

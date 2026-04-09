@@ -14,13 +14,13 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'TayTrack 2000 - Dad\'s Epic Adventure Tracker',
+  title: 'Kiddos - Dad\'s Epic Adventure Tracker',
   description: 'Track Dad\'s work trip from Vancouver, WA to Tulsa, Lincoln, and Omaha!',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'TayTrack',
+    title: 'Kiddos',
   },
   icons: {
     icon: [
