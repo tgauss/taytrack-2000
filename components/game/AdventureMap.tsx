@@ -166,32 +166,38 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       if (!map.current) return;
       setMapLoaded(true);
 
-      // Add 3D terrain
-      try {
-        map.current.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
-        map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
-      } catch {}
+      // Add 3D terrain (skip on mobile — can cause GPU issues)
+      const isMobileDevice = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
+      if (!isMobileDevice) {
+        try {
+          map.current.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
+          map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+        } catch {}
+      }
 
       // Add sky
       try {
         map.current.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
       } catch {}
 
-      // 3D buildings
-      try {
-        const layers = map.current.getStyle().layers;
-        const labelLayer = layers?.find(l => l.type === 'symbol' && l.layout && 'text-field' in l.layout);
-        map.current.addLayer({
-          id: '3d-buildings', source: 'composite', 'source-layer': 'building',
-          filter: ['==', 'extrude', 'true'], type: 'fill-extrusion', minzoom: 12,
-          paint: {
-            'fill-extrusion-color': '#aaa',
-            'fill-extrusion-height': ['get', 'height'],
-            'fill-extrusion-base': ['get', 'min_height'],
-            'fill-extrusion-opacity': 0.6,
-          },
-        }, labelLayer?.id);
-      } catch {}
+      // 3D buildings — skip on mobile/iPad to avoid GPU crashes
+      const isMobile = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
+      if (!isMobile) {
+        try {
+          const layers = map.current.getStyle().layers;
+          const labelLayer = layers?.find(l => l.type === 'symbol' && l.layout && 'text-field' in l.layout);
+          map.current.addLayer({
+            id: '3d-buildings', source: 'composite', 'source-layer': 'building',
+            filter: ['==', 'extrude', 'true'], type: 'fill-extrusion', minzoom: 12,
+            paint: {
+              'fill-extrusion-color': '#aaa',
+              'fill-extrusion-height': ['get', 'height'],
+              'fill-extrusion-base': ['get', 'min_height'],
+              'fill-extrusion-opacity': 0.6,
+            },
+          }, labelLayer?.id);
+        } catch {}
+      }
 
       // Vehicle trail
       try {
@@ -200,8 +206,8 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         map.current.addLayer({ id: 'vehicle-trail-line', type: 'line', source: 'vehicle-trail', paint: { 'line-color': '#00d4ff', 'line-width': 3, 'line-opacity': 0.9 } });
       } catch {}
 
-      // 3D vehicle models (airplane + truck)
-      try {
+      // 3D vehicle models — skip on mobile (model layer not supported on all devices)
+      if (!isMobile) try {
         // Airplane model (hidden by default, shown during flights)
         map.current.addSource('airplane-model', {
           type: 'model',
@@ -781,8 +787,8 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
   const distanceFromHome = currentLocData ? Math.round(getDistanceMiles(LOCATIONS.vancouver.lat, LOCATIONS.vancouver.lng, currentLocData.lat, currentLocData.lng)) : 0;
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      <div ref={mapContainer} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
+    <div className="relative w-full h-full overflow-hidden" style={{ minHeight: '100vh', minWidth: '100vw' }}>
+      <div ref={mapContainer} className="absolute inset-0" style={{ width: '100vw', height: '100vh', position: 'absolute', top: 0, left: 0 }} />
 
       {!mapLoaded && (
         <div className="absolute inset-0 bg-background flex flex-col items-center justify-center">
