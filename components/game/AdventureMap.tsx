@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, getNextLocation, getSegmentType, type GameLocation } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
 import { playTravelAudio, playLocalAudio, stopElevenLabsSpeech } from '@/lib/voice';
-import { getDriveRoute, AIRPORTS, getAirportToHotelRoute, type POI } from '@/lib/poi-data';
+import { getDriveRoute, AIRPORTS, getAirportToHotelRoute, getHomeToPDXRoute, type POI } from '@/lib/poi-data';
 import { animateRoute, zoomInToRoute, FLIGHT_CONFIG, DRIVE_CONFIG, SHORT_DRIVE_CONFIG, AIRPORT_TO_HOTEL_CONFIG, SEGMENT_DURATIONS } from '@/lib/cinematic';
 import { ProgressCaterpillar } from './ProgressCaterpillar';
 import { SleepsCounter } from './SleepsCounter';
@@ -20,7 +20,7 @@ const TRUCK_MODEL_URI = 'https://static.poly.pizza/4e925a01-dbb8-4aab-848b-22130
 
 // City centers — landmarkLng/Lat is where the camera should target on arrival
 const LOCATIONS: Record<string, { name: string; lng: number; lat: number; emoji: string; color: string; landmarkLng?: number; landmarkLat?: number }> = {
-  vancouver: { name: 'Vancouver', lng: -122.5565, lat: 45.6050, emoji: '🏠', color: '#4ade80' }, // 13418 SE Silver Cir
+  vancouver: { name: 'Home', lng: -122.5334, lat: 45.5976, emoji: '🏠', color: '#4ade80' }, // 13418 SE Silver Cir, Vancouver WA
   seattle: { name: 'Seattle', lng: -122.3321, lat: 47.6062, emoji: '☕', color: '#60a5fa', landmarkLng: -122.3493, landmarkLat: 47.6205 }, // Space Needle area
   tulsa: { name: 'Tulsa', lng: -95.9928, lat: 36.1540, emoji: '🤠', color: '#f97316', landmarkLng: -95.9214, landmarkLat: 36.1289 }, // Golden Driller
   lincoln: { name: 'Lincoln', lng: -96.6852, lat: 40.8136, emoji: '🌽', color: '#eab308', landmarkLng: -96.6996, landmarkLat: 40.8088 }, // State Capitol
@@ -145,20 +145,19 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
     const startLocKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
     const startLoc = LOCATIONS[startLocKey] || LOCATIONS.vancouver;
 
-    // If starting fresh (at vancouver), begin at PDX airport for the departure experience
+    // Start at HOME when fresh, otherwise at current city
     const isAtStart = currentLocation === 'vancouver';
     const initialCenter: [number, number] = isAtStart
-      ? AIRPORTS.pdx.lngLat
+      ? [LOCATIONS.vancouver.lng, LOCATIONS.vancouver.lat]
       : [startLoc.lng, startLoc.lat];
 
-    // Use Mapbox Standard style with dusk lighting for cinematic feel
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/standard',
       center: initialCenter,
-      zoom: isAtStart ? 14 : ARRIVAL_ZOOM,
-      pitch: isAtStart ? 70 : ARRIVAL_PITCH,
-      bearing: isAtStart ? 150 : 0, // Look down the runway at PDX
+      zoom: isAtStart ? 16 : ARRIVAL_ZOOM,
+      pitch: isAtStart ? 55 : ARRIVAL_PITCH,
+      bearing: 0,
       antialias: true,
     });
 
@@ -543,9 +542,56 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       const toCoord = flightRoute?.to || [toLoc.lng, toLoc.lat] as [number, number];
       const arcPath = generateArc(fromCoord, toCoord, 100);
 
-      vehicleMarkerRef.current?.setLngLat(fromCoord);
+      // If departing from home, drive to airport first
+      const isDeparture = fromKey === 'vancouver';
+      const startDriveToAirport = (): Promise<void> => {
+        if (!isDeparture || !map.current) return Promise.resolve();
+        return new Promise((resolve) => {
+          const homeRoute = getHomeToPDXRoute();
+          if (emojiDiv) emojiDiv.innerHTML = '🚗';
+          const vEl = vehicleMarkerRef.current?.getElement();
+          if (vEl) vEl.style.display = '';
+          try { map.current?.setLayoutProperty('truck-3d', 'visibility', 'visible'); } catch {}
 
-      zoomInToRoute(map.current, arcPath, 2500).then(() => {
+          stopElevenLabsSpeech();
+          playLocalAudio('drive-home-to-airport');
+
+          activeAnimRef.current = animateRoute(map.current!, homeRoute, {
+            ...SHORT_DRIVE_CONFIG,
+            duration: 13000, // Match 12.6s audio
+          }, {
+            onProgress: (_p, pos) => {
+              vehicleMarkerRef.current?.setLngLat(pos);
+              try {
+                const truckSrc = map.current?.getSource('truck-model') as any;
+                if (truckSrc?.setModels) {
+                  const idx = Math.min(Math.floor(_p * homeRoute.length), homeRoute.length - 2);
+                  const bearing = getBearing(pos[1], pos[0], homeRoute[idx+1][1], homeRoute[idx+1][0]);
+                  truckSrc.setModels({ truck: { uri: TRUCK_MODEL_URI, position: pos, orientation: [0, 0, -bearing] } });
+                }
+              } catch {}
+            },
+            onComplete: () => {
+              try { map.current?.setLayoutProperty('truck-3d', 'visibility', 'none'); } catch {}
+              if (emojiDiv) emojiDiv.innerHTML = '✈️';
+              resolve();
+            },
+          });
+        });
+      };
+
+      startDriveToAirport().then(() => {
+        if (!map.current) return;
+        vehicleMarkerRef.current?.setLngLat(fromCoord);
+
+        // Now play the flight VO and take off
+        stopElevenLabsSpeech();
+        if (isDeparture) {
+          // The travel VO for vancouver-seattle was already skipped by the drive VO
+          playTravelAudio(fromKey, toKey);
+        }
+
+        zoomInToRoute(map.current!, arcPath, 2500).then(() => {
         if (!map.current) return;
 
         const segKey = `${fromKey}-${toKey}`;
@@ -628,6 +674,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
           },
         });
       });
+      }); // end startDriveToAirport().then()
 
     } else {
       soundManager.vroom();

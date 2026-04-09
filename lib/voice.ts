@@ -13,6 +13,9 @@ const LOCAL_AUDIO: Record<string, string> = {
   // Intro
   'intro': '/audio/intro.mp3',
 
+  // Drive to airport
+  'drive-home-to-airport': '/audio/drive-home-to-airport.mp3',
+
   // In-flight / driving narrations
   'flight-vancouver-seattle': '/audio/flight-vancouver-seattle.mp3',
   'flight-seattle-tulsa': '/audio/flight-seattle-tulsa.mp3',
