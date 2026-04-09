@@ -196,23 +196,46 @@ export default function ConnectPage() {
           )}
         </AnimatePresence>
 
-        {/* Camera / Recording overlays */}
+        {/* Camera — full screen takeover */}
         {cameraActive && (
-          <div className="px-4 pb-4 text-center">
-            <div className="rounded-2xl overflow-hidden mb-3 bg-black">
-              <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-[30vh] object-cover" />
+          <div className="flex-1 flex flex-col bg-black">
+            <div className="flex-1 relative overflow-hidden">
+              <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
             </div>
-            <button onClick={takePhoto} className="w-16 h-16 bg-white rounded-full mx-auto flex items-center justify-center touch-manipulation">
-              <div className="w-12 h-12 bg-white border-4 border-slate-900 rounded-full" />
-            </button>
+            <div className="bg-slate-950 py-6 flex items-center justify-center gap-8">
+              <button
+                onClick={() => { streamRef.current?.getTracks().forEach(t => t.stop()); setCameraActive(false); }}
+                className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-2xl touch-manipulation"
+              >
+                ✕
+              </button>
+              <motion.button
+                onClick={takePhoto}
+                className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg touch-manipulation"
+                whileTap={{ scale: 0.85 }}
+              >
+                <div className="w-16 h-16 bg-white border-4 border-slate-900 rounded-full" />
+              </motion.button>
+              <div className="w-14 h-14" /> {/* spacer */}
+            </div>
             <canvas ref={canvasRef} className="hidden" />
           </div>
         )}
 
+        {/* Voice recording — big and clear */}
         {recording && (
-          <div className="px-4 pb-4 text-center">
-            <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-5xl mb-3">🎤</motion.div>
-            <button onClick={stopRecording} className="px-8 py-3 bg-red-500 text-white font-bold rounded-full touch-manipulation">⏹️ Done!</button>
+          <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 px-8">
+            <motion.div animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-8xl mb-8">🎤</motion.div>
+            <p className="text-2xl font-bold text-red-400 mb-8">Recording your message...</p>
+            <motion.button
+              onClick={stopRecording}
+              className="px-12 py-5 bg-red-500 text-white font-bold text-xl rounded-full touch-manipulation"
+              whileTap={{ scale: 0.95 }}
+              animate={{ boxShadow: ['0 0 20px rgba(239,68,68,0.3)', '0 0 40px rgba(239,68,68,0.6)', '0 0 20px rgba(239,68,68,0.3)'] }}
+              transition={{ boxShadow: { duration: 1, repeat: Infinity } }}
+            >
+              ⏹️ Send it!
+            </motion.button>
           </div>
         )}
 

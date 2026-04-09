@@ -295,16 +295,25 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
                   </div>
                 )}
 
-                {/* Camera mode */}
+                {/* Camera mode — big preview */}
                 {cameraActive && (
                   <div className="text-center">
-                    <div className="rounded-2xl overflow-hidden mb-4 bg-black">
-                      <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-[35vh] object-cover" />
+                    <div className="rounded-2xl overflow-hidden mb-4 bg-black" style={{ height: '45vh' }}>
+                      <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                     </div>
-                    <motion.button onClick={takePhoto} whileTap={{ scale: 0.85 }}
-                      className="w-20 h-20 bg-white rounded-full mx-auto flex items-center justify-center shadow-lg touch-manipulation">
-                      <div className="w-16 h-16 bg-white border-4 border-slate-900 rounded-full" />
-                    </motion.button>
+                    <div className="flex items-center justify-center gap-6">
+                      <button
+                        onClick={() => { streamRef.current?.getTracks().forEach(t => t.stop()); setCameraActive(false); }}
+                        className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-2xl touch-manipulation"
+                      >
+                        ✕
+                      </button>
+                      <motion.button onClick={takePhoto} whileTap={{ scale: 0.85 }}
+                        className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg touch-manipulation">
+                        <div className="w-16 h-16 bg-white border-4 border-slate-900 rounded-full" />
+                      </motion.button>
+                      <div className="w-14" />
+                    </div>
                     <canvas ref={canvasRef} className="hidden" />
                   </div>
                 )}
