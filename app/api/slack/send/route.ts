@@ -17,15 +17,21 @@ async function uploadFileToSlack(fileBuffer: Buffer, filename: string, mimetype:
     }),
   });
   const urlData = await getUrlRes.json();
-  if (!urlData.ok) return { ok: false, error: urlData.error };
+  if (!urlData.ok) return { ok: false, error: 'getUploadURL: ' + urlData.error };
 
-  // Step 2: Upload the file
+  // Step 2: Upload the actual file bytes to the presigned URL
   const uploadRes = await fetch(urlData.upload_url, {
     method: 'POST',
     body: fileBuffer,
-    headers: { 'Content-Type': mimetype },
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      'Content-Length': String(fileBuffer.length),
+    },
   });
-  if (!uploadRes.ok) return { ok: false, error: 'Upload failed' };
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text();
+    return { ok: false, error: 'upload: ' + uploadRes.status + ' ' + errText.substring(0, 100) };
+  }
 
   // Step 3: Complete the upload and share to channel
   const completeRes = await fetch('https://slack.com/api/files.completeUploadExternal', {
@@ -41,7 +47,7 @@ async function uploadFileToSlack(fileBuffer: Buffer, filename: string, mimetype:
     }),
   });
   const completeData = await completeRes.json();
-  return { ok: completeData.ok, error: completeData.error };
+  return { ok: completeData.ok, error: completeData.ok ? undefined : 'complete: ' + completeData.error };
 }
 
 export async function POST(request: NextRequest) {

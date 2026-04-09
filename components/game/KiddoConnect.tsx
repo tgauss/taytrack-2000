@@ -92,22 +92,33 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      });
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.setAttribute('webkit-playsinline', 'true');
+        await videoRef.current.play();
+      }
       setCameraActive(true);
-    } catch {}
+    } catch (e) {
+      console.error('Camera error:', e);
+    }
   };
 
   const takePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0);
-    const base64 = canvas.toDataURL('image/jpeg', 0.8);
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     streamRef.current?.getTracks().forEach(t => t.stop());
-    sendMessage('', base64);
+    sendMessage('📸', canvas.toDataURL('image/jpeg', 0.85));
   };
 
   const startRecording = async () => {
