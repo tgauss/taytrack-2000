@@ -268,7 +268,7 @@ export default function ConnectPage() {
           <Link href="/game" className="text-sm text-white/50">← Game</Link>
           <div className="flex items-center gap-2">
             <span className="text-xl">💌</span>
-            <h1 className="text-base font-bold">Kiddo Connect</h1>
+            <h1 className="text-xl font-bold">Kiddo Connect</h1>
           </div>
           <Link href="/" className="text-sm text-white/50">Home →</Link>
         </div>
@@ -281,7 +281,7 @@ export default function ConnectPage() {
             <div className="text-center py-16">
               <motion.span animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="text-6xl block mb-4">💌</motion.span>
               <p className="text-lg text-white/50">Messages will show up here!</p>
-              <p className="text-sm text-white/30 mt-1">Send Dad a message or wait for his reply</p>
+              <p className="text-base text-white/40 mt-1">Send Dad a message or wait for his reply</p>
             </div>
           )}
           {messages.map((msg, i) => (
@@ -311,7 +311,7 @@ export default function ConnectPage() {
                   )}
                   <div className="px-4 py-2.5">
                     {msg.text && (
-                      <p className={`text-[15px] leading-relaxed ${msg.fromKids ? 'text-white' : 'text-white/90'}`}>
+                      <p className={`text-xl leading-relaxed ${msg.fromKids ? 'text-white' : 'text-white/90'}`}>
                         {msg.text}
                       </p>
                     )}
@@ -324,7 +324,7 @@ export default function ConnectPage() {
                     <div className="px-3 pb-2">
                       <button
                         onClick={() => readAloud(msg.text)}
-                        className="w-full py-2.5 bg-white/10 hover:bg-white/15 rounded-xl font-bold text-xs text-white/60 touch-manipulation flex items-center justify-center gap-1.5"
+                        className="w-full py-2.5 bg-white/10 hover:bg-white/15 rounded-xl font-bold text-sm text-white/60 touch-manipulation flex items-center justify-center gap-1.5"
                       >
                         🔊 Read it to me!
                       </button>
@@ -380,12 +380,12 @@ export default function ConnectPage() {
         <AnimatePresence>
           {sent && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-center py-2">
-              <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-sm font-bold">✅ Sent to Dad!</span>
+              <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-base font-bold">✅ Sent to Dad!</span>
             </motion.div>
           )}
           {sendError && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-center py-2">
-              <span className="bg-red-500/20 text-red-400 px-4 py-2 rounded-full text-sm font-bold">😕 Oops! Try again?</span>
+              <span className="bg-red-500/20 text-red-400 px-4 py-2 rounded-full text-base font-bold">😕 Oops! Try again?</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -492,7 +492,7 @@ export default function ConnectPage() {
                 <button
                   key={i}
                   onClick={() => sendMessage(`${msg.emoji} ${msg.text}`)}
-                  className="flex-shrink-0 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm touch-manipulation hover:bg-white/10 whitespace-nowrap"
+                  className="flex-shrink-0 px-5 py-3 bg-white/5 border border-white/10 rounded-full text-base touch-manipulation hover:bg-white/10 whitespace-nowrap"
                 >
                   {msg.emoji} {msg.text}
                 </button>
@@ -501,10 +501,10 @@ export default function ConnectPage() {
 
             {/* Media buttons */}
             <div className="flex gap-2">
-              <button onClick={startCamera} className="flex-1 py-3 bg-blue-500/15 border border-blue-500/25 rounded-xl font-bold text-sm text-blue-400 touch-manipulation">
+              <button onClick={startCamera} className="flex-1 py-4 bg-blue-500/15 border border-blue-500/25 rounded-2xl font-bold text-base text-blue-400 touch-manipulation">
                 📸 Photo
               </button>
-              <button onClick={startRecording} className="flex-1 py-3 bg-red-500/15 border border-red-500/25 rounded-xl font-bold text-sm text-red-400 touch-manipulation">
+              <button onClick={startRecording} className="flex-1 py-4 bg-red-500/15 border border-red-500/25 rounded-2xl font-bold text-base text-red-400 touch-manipulation">
                 🎤 Voice
               </button>
             </div>
