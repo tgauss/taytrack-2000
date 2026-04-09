@@ -5,12 +5,20 @@ const CHANNEL_ID = (process.env.SLACK_CHANNEL_ID || process.env.NEXT_SLACK_CHANN
 const BOT_USER_ID = 'U0ARVCF8CUC'; // TayTrack bot
 const DAD_USER_ID = 'U075LME42KS'; // Dad's Slack user ID
 
+const SLACK_EMOJI: Record<string, string> = {
+  airplane: '✈️', camera_with_flash: '📸', speech_balloon: '💬', microphone: '🎤',
+  test_tube: '🧪', wrench: '🔧', tada: '🎉', heart: '❤️', two_hearts: '💕',
+  star: '⭐', fire: '🔥', wave: '👋', muscle: '💪', sleeping: '😴',
+  hugging_face: '🤗', camera: '📷',
+};
+
 function cleanText(text: string): string {
   return text
     .replace(/<@[A-Z0-9]+>/g, 'Dad')
     .replace(/<#[A-Z0-9|]+>/g, '')
     .replace(/<(https?:\/\/[^|>]+)\|?[^>]*>/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1') // remove bold markdown
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/:([a-z0-9_]+):/g, (_, name) => SLACK_EMOJI[name] || '')
     .trim();
 }
 
