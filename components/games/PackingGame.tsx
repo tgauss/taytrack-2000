@@ -62,7 +62,7 @@ export function PackingGame({ onClose }: PackingGameProps) {
           emoji: ITEMS[Math.floor(Math.random() * ITEMS.length)],
           x: 15 + Math.random() * 70,
           y: -5,
-          speed: 0.15 + Math.random() * 0.08,
+          speed: 0.25 + Math.random() * 0.12,
           caught: false,
           missed: false,
         });
@@ -192,14 +192,14 @@ export function PackingGame({ onClose }: PackingGameProps) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 select-none"
       style={{ background: '#1a1a3e' }}>
-      {/* Warehouse background */}
-      <div className="absolute inset-0">
+      {/* Warehouse background + tint (behind everything) */}
+      <div className="absolute inset-0 z-0">
         <img src="/game-assets/warehouse-bg.webp" alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-indigo-950/40" />
+        <div className="absolute inset-0 bg-indigo-950/35" />
       </div>
 
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-black/30">
+      {/* Header — above background */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3 bg-black/30">
         <button onClick={() => { soundManager.tap(); onClose(); }}
           className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl touch-manipulation">✕</button>
         <div className="flex gap-6 text-white">
@@ -218,10 +218,10 @@ export function PackingGame({ onClose }: PackingGameProps) {
         </div>
       </div>
 
-      {/* Game canvas */}
+      {/* Game canvas — above background */}
       <div
         ref={gameAreaRef}
-        className="absolute inset-0 pt-20"
+        className="absolute inset-0 pt-20 z-10"
         onTouchMove={(e) => { e.preventDefault(); handleMove(e.touches[0].clientX); }}
         onTouchStart={(e) => handleMove(e.touches[0].clientX)}
         onMouseMove={(e) => handleMove(e.clientX)}
@@ -262,7 +262,7 @@ export function PackingGame({ onClose }: PackingGameProps) {
       <AnimatePresence>
         {gameOver && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-black/70 flex items-center justify-center p-8 z-30">
+            className="absolute inset-0 bg-black/70 flex items-center justify-center p-8 z-40">
             <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }}
               className="bg-slate-900 rounded-3xl p-8 text-center max-w-sm w-full border border-white/10">
               <div className="text-6xl mb-4">{score >= 10 ? '🏆' : '📦'}</div>
