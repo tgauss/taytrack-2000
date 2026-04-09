@@ -9,34 +9,35 @@ function poiImage(lng: number, lat: number, zoom = 17): string {
 }
 
 // Real photos downloaded from Wikimedia Commons and hosted locally
-// Real photos from Google Places API, saved locally
+// AI-generated illustrations (GPT-Image-1.5), saved locally
 const LOCAL_PHOTOS: Record<string, string> = {
   // Tulsa
-  'tulsa-golden-driller': '/landmarks/golden-driller.jpg',
-  'tulsa-center-universe': '/landmarks/center-universe.jpg',
-  'tulsa-penguins': '/landmarks/penguins.jpg',
-  'tulsa-cave-house': '/landmarks/cave-house.jpg',
-  'tulsa-tunnels': '/landmarks/tunnels.jpg',
-  'tulsa-elephant-law': '/landmarks/yield-sign.jpg', // No specific elephant photo, use Tulsa scene
-  'tulsa-time-capsule': '/landmarks/time-capsule.jpg',
-  'tulsa-yield-sign': '/landmarks/yield-sign.jpg',
-  'tulsa-route66': '/landmarks/route66.jpg',
-  'tulsa-blue-whale': '/landmarks/blue-whale.jpg',
-  'tulsa-gathering-place': '/landmarks/gathering-place.jpg',
+  'tulsa-golden-driller': '/landmarks/golden-driller.png',
+  'tulsa-center-universe': '/landmarks/center-universe.png',
+  'tulsa-penguins': '/landmarks/penguins.png',
+  'tulsa-cave-house': '/landmarks/cave-house.png',
+  'tulsa-tunnels': '/landmarks/tunnels.png',
+  'tulsa-elephant-law': '/landmarks/elephant-law.png',
+  'tulsa-time-capsule': '/landmarks/time-capsule.png',
+  'tulsa-yield-sign': '/landmarks/yield-sign.png',
+  'tulsa-route66': '/landmarks/route66.png',
+  'tulsa-blue-whale': '/landmarks/blue-whale.png',
+  'tulsa-gathering-place': '/landmarks/gathering-place.png',
   // Lincoln
-  'lincoln-capitol': '/landmarks/capitol.jpg',
-  'lincoln-stadium': '/landmarks/memorial-stadium.jpg',
-  'lincoln-morrill': '/landmarks/morrill-hall.jpg',
-  'lincoln-haymarket': '/landmarks/haymarket.jpg',
-  'lincoln-sunken-gardens': '/landmarks/sunken-gardens.jpg',
+  'lincoln-capitol': '/landmarks/capitol.png',
+  'lincoln-stadium': '/landmarks/memorial-stadium.png',
+  'lincoln-morrill': '/landmarks/morrill-hall.png',
+  'lincoln-haymarket': '/landmarks/haymarket.png',
+  'lincoln-sunken-gardens': '/landmarks/sunken-gardens.png',
   // Roca
-  'roca-berry-farm': '/landmarks/roca-berry-farm.jpg',
+  'roca-berry-farm': '/landmarks/roca-berry-farm.png',
+  'roca-warehouse': '/landmarks/roca-warehouse.png',
   // Omaha
-  'omaha-zoo': '/landmarks/desert-dome.jpg',
-  'omaha-bridge': '/landmarks/bob-kerrey-bridge.jpg',
-  'omaha-durham': '/landmarks/durham-museum.jpg',
-  'omaha-old-market': '/landmarks/old-market.jpg',
-  'omaha-bigboy': '/landmarks/big-boy-train.jpg',
+  'omaha-zoo': '/landmarks/desert-dome.png',
+  'omaha-bridge': '/landmarks/bob-kerrey-bridge.png',
+  'omaha-durham': '/landmarks/durham-museum.png',
+  'omaha-old-market': '/landmarks/old-market.png',
+  'omaha-bigboy': '/landmarks/big-boy-train.png',
 };
 
 // Use local photo if available, fall back to satellite image
