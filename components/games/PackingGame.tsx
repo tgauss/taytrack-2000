@@ -190,7 +190,13 @@ export function PackingGame({ onClose }: PackingGameProps) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-gradient-to-b from-indigo-900 via-purple-900 to-purple-950 select-none">
+      className="fixed inset-0 z-50 select-none"
+      style={{ background: '#1a1a3e' }}>
+      {/* Warehouse background */}
+      <div className="absolute inset-0">
+        <img src="/game-assets/warehouse-bg.webp" alt="" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-indigo-950/40" />
+      </div>
 
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-black/30">
