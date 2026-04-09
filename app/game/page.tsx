@@ -97,7 +97,13 @@ export default function GamePage() {
     // Play arrival narration
     setVOPlaying(true);
     const timer = setTimeout(() => {
-      playArrivalAudio(cityKey, undefined, () => setVOPlaying(false));
+      playArrivalAudio(cityKey, undefined, () => {
+        setVOPlaying(false);
+        // Auto-launch packing game at Roca after "Can you help him?" narration
+        if (currentLocation === 'roca') {
+          setTimeout(() => setActiveGame('packing'), 1500);
+        }
+      });
     }, 3500);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -406,7 +412,14 @@ export default function GamePage() {
       )}
 
       {/* Landmark Explorer */}
-      <LandmarkExplorer poi={selectedPOI} onClose={handleClosePOI} />
+      <LandmarkExplorer
+        poi={selectedPOI}
+        onClose={handleClosePOI}
+        onNextPOI={(next) => {
+          setSelectedPOI(null);
+          handlePOITap(next);
+        }}
+      />
 
       {/* Kiddo Connect — messaging */}
       <KiddoConnect isOpen={menuPanel === 'connect'} onClose={() => setMenuPanel('none')} />

@@ -22,6 +22,7 @@ export interface GameState {
 
   // History explorer
   unlockedHistoryStamps: string[]; // city IDs where history was viewed
+  visitedPOIs: string[]; // POI IDs the kids have explored
 
   // Animation state
   isAnimating: boolean;
@@ -36,6 +37,7 @@ export interface GameState {
   setAnimating: (isAnimating: boolean) => void;
   showAchievement: (badgeId: string | null) => void;
   unlockHistoryStamp: (cityId: string) => void;
+  markPOIVisited: (poiId: string) => void;
   resetGame: () => void;
 }
 
@@ -47,6 +49,7 @@ const initialState = {
   packingHighScore: 0,
   memoryBestTime: 0,
   unlockedHistoryStamps: [] as string[],
+  visitedPOIs: [] as string[],
   isAnimating: false,
   showingAchievement: null as string | null,
 };
@@ -96,6 +99,13 @@ export const useGameStore = create<GameState>()(
       setAnimating: (isAnimating) => set({ isAnimating }),
 
       showAchievement: (badgeId) => set({ showingAchievement: badgeId }),
+
+      markPOIVisited: (poiId) => {
+        const { visitedPOIs } = get();
+        if (!visitedPOIs.includes(poiId)) {
+          set({ visitedPOIs: [...visitedPOIs, poiId] });
+        }
+      },
 
       unlockHistoryStamp: (cityId) => {
         const { unlockedHistoryStamps } = get();
