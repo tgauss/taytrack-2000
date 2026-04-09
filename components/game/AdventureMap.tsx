@@ -6,6 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, getNextLocation, getSegmentType, type GameLocation } from '@/lib/game-state';
 import { soundManager } from '@/lib/sounds';
+import { playTravelAudio, stopElevenLabsSpeech } from '@/lib/voice';
 import { getDriveRoute, AIRPORTS, getAirportToHotelRoute, type POI } from '@/lib/poi-data';
 import { animateRoute, zoomInToRoute, FLIGHT_CONFIG, DRIVE_CONFIG, SHORT_DRIVE_CONFIG, AIRPORT_TO_HOTEL_CONFIG } from '@/lib/cinematic';
 import { ProgressCaterpillar } from './ProgressCaterpillar';
@@ -392,9 +393,13 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
     setAnimating(true);
     setPhase('traveling');
     removeWaypointMarkers();
+    stopElevenLabsSpeech();
 
     const fromKey = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
     const toKey = nextLocation === 'vancouver-return' ? 'vancouver' : nextLocation;
+
+    // Play in-flight/driving narration
+    playTravelAudio(fromKey, toKey);
     const fromLoc = LOCATIONS[fromKey];
     const toLoc = LOCATIONS[toKey];
     if (!fromLoc || !toLoc) return;
@@ -539,6 +544,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady }: AdventureMapPr
   const finishTravel = useCallback((nextLocation: GameLocation, toLoc: { lng: number; lat: number }) => {
     setAnimating(false);
     moveToLocation(nextLocation);
+    stopElevenLabsSpeech(); // Stop travel narration so arrival narration can play
     soundManager.arrive();
     setPhase('arrived');
 

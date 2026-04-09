@@ -13,6 +13,14 @@ const LOCAL_AUDIO: Record<string, string> = {
   // Intro
   'intro': '/audio/intro.mp3',
 
+  // In-flight / driving narrations
+  'flight-vancouver-seattle': '/audio/flight-vancouver-seattle.mp3',
+  'flight-seattle-tulsa': '/audio/flight-seattle-tulsa.mp3',
+  'drive-tulsa-lincoln': '/audio/drive-tulsa-lincoln.mp3',
+  'drive-lincoln-roca': '/audio/drive-lincoln-roca.mp3',
+  'drive-roca-omaha': '/audio/drive-roca-omaha.mp3',
+  'flight-omaha-home': '/audio/flight-omaha-home.mp3',
+
   // City arrivals
   'arrive-seattle': '/audio/arrive-seattle.mp3',
   'arrive-tulsa': '/audio/arrive-tulsa.mp3',
@@ -136,6 +144,30 @@ export function playArrivalAudio(
   onEnd?: () => void,
 ): boolean {
   return playLocalAudio(`arrive-${cityId}`, onStart, onEnd);
+}
+
+// Travel segment narration keys
+const TRAVEL_AUDIO: Record<string, string> = {
+  'vancouver-seattle': 'flight-vancouver-seattle',
+  'seattle-tulsa': 'flight-seattle-tulsa',
+  'tulsa-lincoln': 'drive-tulsa-lincoln',
+  'lincoln-roca': 'drive-lincoln-roca',
+  'roca-omaha': 'drive-roca-omaha',
+  'omaha-vancouver-return': 'flight-omaha-home',
+};
+
+/**
+ * Play the in-flight/driving narration for a travel segment.
+ */
+export function playTravelAudio(
+  fromCity: string,
+  toCity: string,
+  onStart?: () => void,
+  onEnd?: () => void,
+): boolean {
+  const key = TRAVEL_AUDIO[`${fromCity}-${toCity}`];
+  if (key) return playLocalAudio(key, onStart, onEnd);
+  return false;
 }
 
 export function stopElevenLabsSpeech() {
