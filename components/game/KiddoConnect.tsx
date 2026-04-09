@@ -169,12 +169,13 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
   };
 
   const stopRecording = () => {
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') return;
     playBeep();
-    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current.stop();
     setRecording(false);
     setRecordingTime(0);
-    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-    if (autoStopRef.current) clearTimeout(autoStopRef.current);
+    if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null; }
+    if (autoStopRef.current) { clearTimeout(autoStopRef.current); autoStopRef.current = null; }
   };
 
   const handleClose = () => {

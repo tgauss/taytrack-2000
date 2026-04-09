@@ -59,10 +59,10 @@ export async function GET() {
 
     // Fallback: use date-based location
     const today = new Date().toISOString().split('T')[0];
-    let fallback = LOCATIONS['vancouver'];
-    if (today >= '2026-04-12' && today <= '2026-04-15') fallback = LOCATIONS['tulsa'];
-    else if (today >= '2026-04-16' && today <= '2026-04-18') fallback = LOCATIONS['lincoln'];
-    else if (today === '2026-04-19') fallback = LOCATIONS['omaha'];
+    let fallback = KNOWN_LOCATIONS['vancouver'];
+    if (today >= '2026-04-12' && today <= '2026-04-15') fallback = KNOWN_LOCATIONS['tulsa'];
+    else if (today >= '2026-04-16' && today <= '2026-04-18') fallback = KNOWN_LOCATIONS['lincoln'];
+    else if (today === '2026-04-19') fallback = KNOWN_LOCATIONS['omaha'];
 
     return NextResponse.json({ ok: true, ...fallback, source: 'schedule' });
   } catch (error) {
@@ -74,7 +74,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { location } = await request.json();
-    const loc = LOCATIONS[location?.toLowerCase()];
+    const loc = KNOWN_LOCATIONS[location?.toLowerCase()];
     if (!loc) {
       return NextResponse.json({ ok: false, error: `Unknown location. Try: ${Object.keys(LOCATIONS).join(', ')}` });
     }

@@ -108,6 +108,14 @@ export default function ConnectPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Cleanup camera/mic on unmount
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      mediaRecorderRef.current?.stop();
+    };
+  }, []);
+
   const sendMessage = async (text: string, imageBase64?: string, audioBase64?: string) => {
     if (atLimit) return;
     setSending(true);
@@ -228,12 +236,13 @@ export default function ConnectPage() {
   };
 
   const stopRecording = () => {
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') return;
     playDictationSound();
-    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current.stop();
     setRecording(false);
     setRecordingTime(0);
-    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-    if (autoStopRef.current) clearTimeout(autoStopRef.current);
+    if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null; }
+    if (autoStopRef.current) { clearTimeout(autoStopRef.current); autoStopRef.current = null; }
   };
 
   return (

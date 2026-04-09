@@ -42,6 +42,13 @@ type MenuPanel = 'none' | 'menu' | 'badges' | 'journal' | 'games' | 'connect' | 
 
 // Arrival narrations are now pre-generated audio files in /public/audio/
 
+const CITY_EMOJIS: Record<string, string> = {
+  seattle: '☕', tulsa: '🤠', lincoln: '🌽', roca: '📦', omaha: '✈️', 'vancouver-return': '🏠',
+};
+const CITY_NAMES: Record<string, string> = {
+  seattle: 'Seattle', tulsa: 'Tulsa', lincoln: 'Lincoln', roca: 'Roca', omaha: 'Omaha', 'vancouver-return': 'Home',
+};
+
 export default function GamePage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
@@ -72,13 +79,6 @@ export default function GamePage() {
     setSelectedPOI(null);
     mapControlsRef.current?.flyBackToCity();
   }, []);
-
-  const CITY_EMOJIS: Record<string, string> = {
-    seattle: '☕', tulsa: '🤠', lincoln: '🌽', roca: '📦', omaha: '✈️', 'vancouver-return': '🏠',
-  };
-  const CITY_NAMES: Record<string, string> = {
-    seattle: 'Seattle', tulsa: 'Tulsa', lincoln: 'Lincoln', roca: 'Roca', omaha: 'Omaha', 'vancouver-return': 'Home',
-  };
 
   // Celebration + narration when arriving at a city
   useEffect(() => {
