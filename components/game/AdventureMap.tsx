@@ -187,6 +187,11 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         pitch: isAtStart ? 55 : ARRIVAL_PITCH,
         bearing: 0,
         antialias: true,
+        config: {
+          basemap: {
+            lightPreset: 'dark',
+          },
+        },
       });
 
       // Force resize after a delay — fixes iPad blank map issue
