@@ -9,16 +9,29 @@ function poiImage(lng: number, lat: number, zoom = 17): string {
 }
 
 // Real photos downloaded from Wikimedia Commons and hosted locally
+// Real photos from Google Places API, saved locally
 const LOCAL_PHOTOS: Record<string, string> = {
+  // Tulsa
   'tulsa-golden-driller': '/landmarks/golden-driller.jpg',
+  'tulsa-center-universe': '/landmarks/center-universe.jpg',
+  'tulsa-penguins': '/landmarks/penguins.jpg',
+  'tulsa-cave-house': '/landmarks/cave-house.jpg',
+  'tulsa-tunnels': '/landmarks/tunnels.jpg',
+  'tulsa-elephant-law': '/landmarks/yield-sign.jpg', // No specific elephant photo, use Tulsa scene
+  'tulsa-time-capsule': '/landmarks/time-capsule.jpg',
+  'tulsa-yield-sign': '/landmarks/yield-sign.jpg',
+  'tulsa-route66': '/landmarks/route66.jpg',
   'tulsa-blue-whale': '/landmarks/blue-whale.jpg',
   'tulsa-gathering-place': '/landmarks/gathering-place.jpg',
-  'tulsa-route66': '/landmarks/route66.jpg',
+  // Lincoln
   'lincoln-capitol': '/landmarks/capitol.jpg',
   'lincoln-stadium': '/landmarks/memorial-stadium.jpg',
   'lincoln-morrill': '/landmarks/morrill-hall.jpg',
   'lincoln-haymarket': '/landmarks/haymarket.jpg',
   'lincoln-sunken-gardens': '/landmarks/sunken-gardens.jpg',
+  // Roca
+  'roca-berry-farm': '/landmarks/roca-berry-farm.jpg',
+  // Omaha
   'omaha-zoo': '/landmarks/desert-dome.jpg',
   'omaha-bridge': '/landmarks/bob-kerrey-bridge.jpg',
   'omaha-durham': '/landmarks/durham-museum.jpg',
@@ -73,7 +86,7 @@ export const cityPOIs: Record<string, POI[]> = {
       lngLat: [-95.9214, 36.1289],
       funFact: 'A massive, shiny gold statue of a worker that is as tall as a 7-story building!',
       color: '#f97316',
-      imageUrl: '/landmarks/golden-driller.jpg',
+      imageUrl: getPoiImage('tulsa-golden-driller', -95.9214, 36.1289),
       historyLesson: 'The Golden Driller is 75 feet tall and weighs 43,500 pounds! If he were a real person, he would wear a size 393DDD shoe. He was built a long time ago to celebrate Tulsa\'s history of finding oil hidden deep underground. His right hand rests on a REAL oil derrick that was brought from a real oil field! His belt is 48 feet around — that\'s as long as a school bus! In 1979, Oklahoma made him the official state monument.',
       didYouKnow: 'If he were real, his shoe size would be 393DDD. That is NOT a real shoe size! Nobody makes shoes that big!',
     },
@@ -169,7 +182,7 @@ export const cityPOIs: Record<string, POI[]> = {
       lngLat: [-95.973, 36.1476],
       funFact: 'One of the most famous and longest roads in America started with an idea in Tulsa!',
       color: '#f97316',
-      imageUrl: '/landmarks/route66.jpg',
+      imageUrl: getPoiImage('tulsa-route66', -95.973, 36.1476),
       historyLesson: 'Route 66 used to stretch all the way from Chicago to California! A businessman from Tulsa helped come up with the idea to build this giant road to connect the country. People call Tulsa the "Capital of Route 66," and there are cool neon signs everywhere! The character Sally in the Pixar movie Cars was inspired by a REAL woman named Dawn Welch who runs the Rock Cafe on Route 66 in Oklahoma!',
       didYouKnow: 'Near the old Route 66 bridge in Tulsa, there are replica neon signs from old 1950s motels that light up at night. It looks like going back in time!',
     },
@@ -181,7 +194,7 @@ export const cityPOIs: Record<string, POI[]> = {
       lngLat: [-95.9776, 36.1367],
       funFact: 'A gigantic park with massive towers, giant slides, and pirate ships — and it\'s FREE!',
       color: '#4ade80',
-      imageUrl: '/landmarks/gathering-place.jpg',
+      imageUrl: getPoiImage('tulsa-gathering-place', -95.9776, 36.1367),
       historyLesson: 'The Gathering Place is one of the biggest and coolest parks in America. It covers 100 acres (that\'s as big as 75 football fields!) and has a giant wooden castle, huge slides, and a magical water playground. It cost 465 MILLION dollars to build and 3 million people visited in the first year! TIME Magazine named it one of the World\'s 100 Greatest Places!',
       didYouKnow: 'It took years to build and was made just for kids to explore. Everything is completely FREE!',
     },
