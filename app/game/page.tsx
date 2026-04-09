@@ -75,8 +75,9 @@ export default function GamePage() {
   }, []); // Only on mount
 
   const handlePOITap = useCallback((poi: POI) => {
-    setSelectedPOI(poi);
+    // Fly to the POI first, then open the lesson after the camera arrives
     mapControlsRef.current?.flyToPOI?.(poi);
+    setTimeout(() => setSelectedPOI(poi), 1800);
   }, []);
 
   const handleClosePOI = useCallback(() => {
