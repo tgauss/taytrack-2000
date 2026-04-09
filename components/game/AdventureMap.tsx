@@ -181,17 +181,12 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/standard',
+        style: 'mapbox://styles/mapbox/dark-v11',
         center: initialCenter,
         zoom: isAtStart ? 16 : ARRIVAL_ZOOM,
         pitch: isAtStart ? 55 : ARRIVAL_PITCH,
         bearing: 0,
         antialias: true,
-        config: {
-          basemap: {
-            lightPreset: 'dark',
-          },
-        },
       });
 
       // Force resize after a delay — fixes iPad blank map issue
@@ -205,10 +200,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       map.current.resize();
       setMapLoaded(true);
 
-      // Dark theme for Standard style — keeps 3D buildings
-      try {
-        map.current.setConfigProperty('basemap', 'lightPreset', 'dark');
-      } catch {}
+      // dark-v11 style — no config needed, dark by default
 
       // Add 3D terrain (skip on mobile — can cause GPU issues)
       const isMobileDevice = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
