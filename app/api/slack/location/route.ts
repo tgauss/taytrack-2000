@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 const SLACK_TOKEN = (process.env.SLACK_BOT_TOKEN || process.env.NEXT_SLACK_TOKEN || '').trim();
 const CHANNEL_ID = (process.env.SLACK_CHANNEL_ID || process.env.NEXT_SLACK_CHANNEL || '').trim();
 
-// Known locations Dad might be at
-const LOCATIONS: Record<string, { lat: number; lon: number; city: string }> = {
+// Quick lookup for known trip cities (no API call needed)
+const KNOWN_LOCATIONS: Record<string, { lat: number; lon: number; city: string }> = {
   'vancouver': { lat: 45.64, lon: -122.66, city: 'Vancouver' },
   'portland': { lat: 45.52, lon: -122.68, city: 'Portland' },
   'seattle': { lat: 47.61, lon: -122.33, city: 'Seattle' },
@@ -16,6 +16,19 @@ const LOCATIONS: Record<string, { lat: number; lon: number; city: string }> = {
   'home': { lat: 45.64, lon: -122.66, city: 'Home' },
 };
 
+// Geocode any city name via Open-Meteo (free, no API key)
+async function geocodeCity(name: string): Promise<{ lat: number; lon: number; city: string } | null> {
+  try {
+    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=en&format=json`);
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      const r = data.results[0];
+      return { lat: r.latitude, lon: r.longitude, city: r.name };
+    }
+  } catch {}
+  return null;
+}
+
 // GET: Read Dad's current location from the latest !location message in the channel
 export async function GET() {
   try {
@@ -26,14 +39,20 @@ export async function GET() {
     const data = await res.json();
     if (!data.ok) return NextResponse.json({ ok: false, error: data.error });
 
-    // Find the most recent !location message from Dad (not bot)
+    // Find the most recent !location message
     for (const msg of data.messages || []) {
       const text = (msg.text || '').trim().toLowerCase();
       if (text.startsWith('!location ')) {
         const locationName = text.replace('!location ', '').trim();
-        const loc = LOCATIONS[locationName];
-        if (loc) {
-          return NextResponse.json({ ok: true, ...loc, source: 'manual' });
+        // Try known locations first
+        const known = KNOWN_LOCATIONS[locationName];
+        if (known) {
+          return NextResponse.json({ ok: true, ...known, source: 'manual' });
+        }
+        // Geocode any city name
+        const geocoded = await geocodeCity(locationName);
+        if (geocoded) {
+          return NextResponse.json({ ok: true, ...geocoded, source: 'geocoded' });
         }
       }
     }
