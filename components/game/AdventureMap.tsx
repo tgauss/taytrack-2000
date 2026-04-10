@@ -189,7 +189,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         antialias: true,
         config: {
           basemap: {
-            lightPreset: 'dark',
+            lightPreset: 'night',
           },
         },
       });
