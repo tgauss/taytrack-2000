@@ -339,8 +339,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         <div class="vehicle-pulse-ring"></div>
         <div class="vehicle-emoji">${isAtStart ? '🚗' : '✈️'}</div>
       </div>`;
-      vehicleEl.style.cssText = 'transform:translate(-50%,-50%);';
-      vehicleMarkerRef.current = new mapboxgl.Marker({ element: vehicleEl }).setLngLat(initialCenter).addTo(map.current);
+      vehicleMarkerRef.current = new mapboxgl.Marker({ element: vehicleEl, anchor: 'center' }).setLngLat(initialCenter).addTo(map.current);
 
       // CSS
       const style = document.createElement('style');
@@ -348,6 +347,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-8px)}}
         @keyframes poiFadeIn{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
         @keyframes pulseRing{0%{transform:scale(0.8);opacity:0.6}50%{transform:scale(1.8);opacity:0}100%{transform:scale(0.8);opacity:0.6}}
+        .mapboxgl-marker{z-index:10!important;}
         .vehicle-emoji{font-size:48px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.6));animation:bounce 0.5s ease-in-out infinite alternate;position:relative;z-index:2;}
         .vehicle-pulse-ring{position:absolute;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,rgba(0,212,255,0.5) 0%,rgba(0,212,255,0) 70%);animation:pulseRing 1.5s ease-in-out infinite;z-index:1;}
         .mapboxgl-popup-content{background:rgba(15,15,30,0.95)!important;border-radius:16px!important;padding:12px!important;border:1px solid rgba(255,255,255,0.15)!important;box-shadow:0 8px 32px rgba(0,0,0,0.5)!important;}
