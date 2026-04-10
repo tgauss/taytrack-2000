@@ -192,10 +192,9 @@ export function PackingGame({ onClose }: PackingGameProps) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 select-none"
       style={{ background: '#1a1a3e' }}>
-      {/* Warehouse background + tint (behind everything) */}
+      {/* Warehouse background (behind everything) */}
       <div className="absolute inset-0 z-0">
         <img src="/game-assets/warehouse-bg.webp" alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-indigo-950/35" />
       </div>
 
       {/* Header — above background */}

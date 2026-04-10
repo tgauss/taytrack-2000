@@ -205,7 +205,12 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       map.current.resize();
       setMapLoaded(true);
 
-      // dark-v11 style — no config needed, dark by default
+      // Reinforce night preset after style loads (belt-and-suspenders)
+      try {
+        map.current.setConfigProperty('basemap', 'lightPreset', 'night');
+      } catch (e) {
+        console.warn('[TAYTRACK] setConfigProperty failed:', e);
+      }
 
       // Add 3D terrain (skip on mobile — can cause GPU issues)
       const isMobileDevice = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
