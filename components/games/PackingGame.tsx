@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { soundManager } from '@/lib/sounds';
 import { useGameStore } from '@/lib/game-state';
 
-const ITEMS = ['🧸', '👕', '📱', '🧴', '👖', '🧦', '📚', '🎒', '🧢', '⌚', '🪥', '👟'];
+const ITEMS = ['🌽', '⚙️', '🪑', '🏈', '🧸', '👢', '🎒', '🧢', '🌻', '🔩', '🪵', '🧤'];
 
 interface FallingItem {
   id: number;

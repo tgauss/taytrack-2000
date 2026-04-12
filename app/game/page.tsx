@@ -56,7 +56,7 @@ export default function GamePage() {
   const [activeGame, setActiveGame] = useState<ActiveGame>(null);
   const [showIntro, setShowIntro] = useState(false);
   const [voPlaying, setVOPlaying] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(true);
+  // Portrait mode works fine — no landscape requirement
   const [celebrationCity, setCelebrationCity] = useState<{ name: string; emoji: string } | null>(null);
   const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void; flyToCity?: (cityId: string) => void } | null>(null);
   const { resetGame, earnedBadges, currentLocation, isMuted, moveToLocation } = useGameStore();
@@ -150,21 +150,6 @@ export default function GamePage() {
     }
   };
 
-  // Portrait mode
-  if (!isLandscape) {
-    return (
-      <div className="fixed inset-0 bg-background flex items-center justify-center p-8 text-center">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-sm">
-          <motion.div animate={{ rotate: [0, 90, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }} className="text-7xl mb-6">📱</motion.div>
-          <h2 className="text-3xl font-bold text-foreground mb-4">Turn Me Sideways!</h2>
-          <p className="text-xl text-muted-foreground mb-6">The adventure works best this way!</p>
-          <button onClick={() => setIsLandscape(true)} className="w-full py-5 bg-primary text-primary-foreground rounded-2xl font-bold text-xl touch-manipulation">
-            OK! 👍
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
