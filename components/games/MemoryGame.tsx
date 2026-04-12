@@ -15,14 +15,14 @@ interface Card {
 
 // Trip-themed cards with custom AI art
 const CARD_SET = [
-  { image: '/game-assets/card-airplane.png', label: 'Airplane' },
-  { image: '/game-assets/card-car.png', label: 'Truck' },
-  { image: '/game-assets/card-dad.png', label: 'Dad' },
-  { image: '/game-assets/card-house.png', label: 'Home' },
-  { image: '/game-assets/card-box.png', label: 'Box' },
-  { image: '/game-assets/card-star.png', label: 'Star' },
-  { image: '/game-assets/card-cowboy.png', label: 'Cowboy' },
-  { image: '/game-assets/card-corn.png', label: 'Corn' },
+  { image: '/game-assets/card-airplane.webp', label: 'Airplane' },
+  { image: '/game-assets/card-car.webp', label: 'Truck' },
+  { image: '/game-assets/card-dad.webp', label: 'Dad' },
+  { image: '/game-assets/card-house.webp', label: 'Home' },
+  { image: '/game-assets/card-box.webp', label: 'Box' },
+  { image: '/game-assets/card-star.webp', label: 'Star' },
+  { image: '/game-assets/card-cowboy.webp', label: 'Cowboy' },
+  { image: '/game-assets/card-corn.webp', label: 'Corn' },
 ];
 
 type Difficulty = 'easy' | 'normal' | 'hard';
@@ -130,7 +130,7 @@ export function MemoryGame({ onClose }: MemoryGameProps) {
           </button>
         </div>
         <div className="text-center px-8 max-w-sm w-full">
-          <img src="/game-assets/card-star.png" alt="" className="w-24 h-24 object-contain mx-auto mb-4" />
+          <img src="/game-assets/card-star.webp" alt="" className="w-24 h-24 object-contain mx-auto mb-4" />
           <h2 className="text-3xl font-bold text-white mb-8">Memory Match!</h2>
           <div className="space-y-4">
             {([
@@ -196,7 +196,7 @@ export function MemoryGame({ onClose }: MemoryGameProps) {
                   className="absolute inset-0 rounded-2xl flex items-center justify-center overflow-hidden"
                   style={{ backfaceVisibility: 'hidden' }}
                 >
-                  <img src="/game-assets/card-back.png" alt="" className="w-full h-full object-cover" />
+                  <img src="/game-assets/card-back.webp" alt="" className="w-full h-full object-cover" />
                 </div>
 
                 {/* Card front */}
@@ -230,7 +230,7 @@ export function MemoryGame({ onClose }: MemoryGameProps) {
             className="absolute inset-0 bg-black/70 flex items-center justify-center p-8 z-30">
             <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }}
               className="bg-slate-900 rounded-3xl p-8 text-center max-w-sm w-full border border-white/10">
-              <img src="/game-assets/card-star.png" alt="" className="w-20 h-20 object-contain mx-auto mb-4" />
+              <img src="/game-assets/card-star.webp" alt="" className="w-20 h-20 object-contain mx-auto mb-4" />
               <h2 className="text-3xl font-bold text-white mb-4">You Did It!</h2>
               <div className="flex justify-center gap-8 mb-4">
                 <div className="text-center">

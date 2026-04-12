@@ -37,8 +37,16 @@ export function PackingGame({ onClose }: PackingGameProps) {
   const gameOverRef = useRef(false);
   const lastSpawnRef = useRef(0);
   const animFrameRef = useRef<number>(0);
+  const boxImageRef = useRef<HTMLImageElement | null>(null);
 
   const { setPackingScore, packingHighScore, earnBadge, showAchievement } = useGameStore();
+
+  // Preload box image
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/game-assets/box-open-new.webp';
+    img.onload = () => { boxImageRef.current = img; };
+  }, []);
 
   // Game loop — uses canvas for zero-lag rendering
   const gameLoop = useCallback((timestamp: number) => {
@@ -115,13 +123,18 @@ export function PackingGame({ onClose }: PackingGameProps) {
       return true;
     });
 
-    // Draw box
+    // Draw box (custom image or emoji fallback)
     const boxPx = (boxX / 100) * w;
     const boxPy = h * 0.88;
-    ctx.font = `${Math.round(w * 0.12)}px serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('📦', boxPx, boxPy);
+    if (boxImageRef.current) {
+      const boxSize = Math.round(w * 0.15);
+      ctx.drawImage(boxImageRef.current, boxPx - boxSize / 2, boxPy - boxSize / 2, boxSize, boxSize);
+    } else {
+      ctx.font = `${Math.round(w * 0.12)}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('📦', boxPx, boxPy);
+    }
 
     // Draw catch zone indicator
     ctx.fillStyle = 'rgba(250, 204, 21, 0.15)';
