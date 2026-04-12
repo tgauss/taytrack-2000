@@ -150,7 +150,8 @@ export default function GamePage() {
     soundManager.tap();
     stopElevenLabsSpeech();
     resetGame();
-    setShowIntro(true);
+    // Reload to reinitialize the map at vancouver
+    window.location.reload();
   };
 
   const dismissIntro = () => {
