@@ -12,7 +12,7 @@ import { LandmarkExplorer } from '@/components/game/LandmarkExplorer';
 import { CityExplorer } from '@/components/game/CityExplorer';
 import { ArrivalCelebration } from '@/components/game/ArrivalCelebration';
 import { SendHug } from '@/components/game/SendHug';
-import { PreTripCountdown } from '@/components/game/PreTripCountdown';
+// PreTripCountdown removed — trip is live
 import { KiddoConnect, useNewMessages } from '@/components/game/KiddoConnect';
 import { GoodNight } from '@/components/game/GoodNight';
 import { PackingGame } from '@/components/games/PackingGame';
@@ -459,8 +459,6 @@ export default function GamePage() {
       {/* Arrival Celebration */}
       <ArrivalCelebration cityName={celebrationCity?.name || null} cityEmoji={celebrationCity?.emoji} />
 
-      {/* Pre-trip Countdown (shows before Apr 12) */}
-      <PreTripCountdown />
 
       {/* Achievement Popup */}
       <AchievementPopup />

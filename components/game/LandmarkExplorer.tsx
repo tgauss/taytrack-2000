@@ -91,7 +91,7 @@ export function LandmarkExplorer({ poi, onClose, onNextPOI }: LandmarkExplorerPr
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 28, stiffness: 250 }}
-          className="fixed bottom-0 left-0 right-0 h-[50vh] z-[80] flex flex-col"
+          className="fixed bottom-0 left-0 right-0 h-[55vh] z-[80] flex flex-col"
         >
           <div className="bg-slate-900/98 backdrop-blur-xl rounded-t-[24px] flex flex-col h-full border-t border-white/10 shadow-2xl">
 
@@ -100,121 +100,63 @@ export function LandmarkExplorer({ poi, onClose, onNextPOI }: LandmarkExplorerPr
               <div className="w-10 h-1 rounded-full bg-white/20" />
             </div>
 
-            {/* Header — emoji, name, progress dots */}
-            <div className="px-4 pb-2 flex items-center gap-3">
-              <motion.span
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="text-4xl"
-              >
+            {/* Title + listening indicator */}
+            <div className="px-5 pb-2 flex items-center gap-3">
+              <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 2, repeat: Infinity }} className="text-5xl">
                 {poi.emoji}
               </motion.span>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-bold text-white truncate">{poi.name}</h2>
-                {/* Progress: visited dots */}
-                <div className="flex gap-1 mt-1">
-                  {cityPOIs.map(p => (
-                    <div
-                      key={p.id}
-                      className={`w-2 h-2 rounded-full ${
-                        p.id === poi.id ? 'bg-cyan-400' : visitedPOIs.includes(p.id) ? 'bg-cyan-400/40' : 'bg-white/10'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-              {/* Listening indicator */}
+              <h2 className="text-2xl font-bold text-white flex-1 truncate">{poi.name}</h2>
               {isSpeaking && (
                 <div className="flex gap-0.5">
                   {[0, 0.12, 0.24, 0.12].map((d, i) => (
                     <motion.div key={i} animate={{ scaleY: [1, 2.5, 1] }}
                       transition={{ duration: 0.4, repeat: Infinity, delay: d }}
-                      className="w-1 h-3 bg-cyan-400 rounded-full" />
+                      className="w-1.5 h-4 bg-cyan-400 rounded-full" />
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Content — scrollable */}
-            <div className="flex-1 overflow-y-auto px-4 pb-3 space-y-3">
-              {/* Image */}
+            {/* BIG image — takes up most of the space */}
+            <div className="flex-1 px-4 pb-2 min-h-0">
               {poi.imageUrl && (
-                <div className="rounded-xl overflow-hidden bg-slate-800">
-                  <img src={poi.imageUrl} alt={poi.name} className="w-full max-h-[18vh] object-contain" />
-                </div>
-              )}
-
-              {/* Story text */}
-              <p className="text-base leading-relaxed text-white/85">{poi.historyLesson}</p>
-
-              {/* Did You Know */}
-              {poi.didYouKnow && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">💡</span>
-                    <p className="text-sm text-white/70">{poi.didYouKnow}</p>
-                  </div>
+                <div className="rounded-2xl overflow-hidden bg-slate-800 h-full flex items-center justify-center">
+                  <img src={poi.imageUrl} alt={poi.name} className="w-full h-full object-contain" />
                 </div>
               )}
             </div>
 
-            {/* Bottom bar — BIG icon buttons only, no text */}
-            <div className="px-4 pb-4 pt-2 border-t border-white/5 flex gap-3">
-              {/* Replay */}
-              <motion.button
-                onClick={handlePlay}
-                disabled={isSpeaking}
+            {/* Progress dots */}
+            <div className="flex justify-center gap-1.5 pb-2">
+              {cityPOIs.map(p => (
+                <div key={p.id} className={`w-2.5 h-2.5 rounded-full ${
+                  p.id === poi.id ? 'bg-cyan-400' : visitedPOIs.includes(p.id) ? 'bg-cyan-400/40' : 'bg-white/10'
+                }`} />
+              ))}
+            </div>
+
+            {/* Bottom bar — BIG simple buttons */}
+            <div className="px-4 pb-5 flex gap-3">
+              <motion.button onClick={handlePlay} disabled={isSpeaking}
                 className="w-16 h-16 bg-cyan-500/20 border-2 border-cyan-500/30 rounded-2xl flex items-center justify-center text-3xl touch-manipulation disabled:opacity-40"
-                whileTap={{ scale: 0.9 }}
-              >
+                whileTap={{ scale: 0.9 }}>
                 🔊
               </motion.button>
-
-              {/* Next POI / Done */}
-              <motion.button
-                onClick={handleNext}
-                className={`flex-1 h-16 rounded-2xl font-bold text-xl touch-manipulation flex items-center justify-center gap-2 ${
-                  nextPOI
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
-                    : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+              <motion.button onClick={handleNext}
+                className={`flex-1 h-16 rounded-2xl font-bold text-2xl touch-manipulation flex items-center justify-center gap-3 ${
+                  nextPOI ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
                 }`}
                 whileTap={{ scale: 0.96 }}
-                animate={showNudge && !isSpeaking ? {
-                  scale: [1, 1.04, 1],
-                  boxShadow: ['0 0 20px rgba(6,182,212,0.3)', '0 0 40px rgba(6,182,212,0.6)', '0 0 20px rgba(6,182,212,0.3)'],
-                } : {}}
-                transition={{ scale: { duration: 1.5, repeat: Infinity }, boxShadow: { duration: 1.5, repeat: Infinity } }}
-              >
-                {nextPOI ? (
-                  <><span className="text-2xl">{nextPOI.emoji}</span> ▶️</>
-                ) : (
-                  <>✅ 🗺️</>
-                )}
+                animate={showNudge && !isSpeaking ? { scale: [1, 1.04, 1] } : {}}
+                transition={{ scale: { duration: 1.5, repeat: Infinity } }}>
+                {nextPOI ? <><span className="text-3xl">{nextPOI.emoji}</span> ▶️</> : <>✅ 🗺️</>}
               </motion.button>
-
-              {/* Close */}
-              <motion.button
-                onClick={handleClose}
+              <motion.button onClick={handleClose}
                 className="w-16 h-16 bg-white/5 border-2 border-white/10 rounded-2xl flex items-center justify-center text-2xl touch-manipulation"
-                whileTap={{ scale: 0.9 }}
-              >
+                whileTap={{ scale: 0.9 }}>
                 ✕
               </motion.button>
             </div>
-
-            {/* Nudge text — only after narration finishes */}
-            <AnimatePresence>
-              {showNudge && nextPOI && !isSpeaking && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center pb-2"
-                >
-                  <p className="text-xs text-white/30">{visitedCount} of {cityPOIs.length} explored</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </motion.div>
       )}
