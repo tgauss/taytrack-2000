@@ -26,7 +26,7 @@ export function PreTripCountdown() {
 
   // Check for ?demo=true in URL
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.search.includes('demo=true')) {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('demo')) {
       setDismissed(true);
     }
   }, []);
