@@ -122,12 +122,6 @@ export default function GamePage() {
     mapControlsRef.current?.flyToCity?.(cityId);
   }, []);
 
-  useEffect(() => {
-    const checkOrientation = () => setIsLandscape(window.innerWidth > window.innerHeight);
-    checkOrientation();
-    window.addEventListener('resize', checkOrientation);
-    return () => window.removeEventListener('resize', checkOrientation);
-  }, []);
 
   const handleCityTap = (cityId: string) => setSelectedCity(cityId);
   const handlePlayGame = (gameId: string) => { setSelectedCity(null); setActiveGame(gameId as ActiveGame); };
