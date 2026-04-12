@@ -59,7 +59,9 @@ export default function GamePage() {
   // Portrait mode works fine — no landscape requirement
   const [celebrationCity, setCelebrationCity] = useState<{ name: string; emoji: string } | null>(null);
   const mapControlsRef = useRef<{ flyBackToCity: () => void; flyToPOI?: (poi: POI) => void; flyToCity?: (cityId: string) => void } | null>(null);
-  const { resetGame, earnedBadges, currentLocation, isMuted, moveToLocation } = useGameStore();
+  const { resetGame, earnedBadges, currentLocation, isMuted, moveToLocation, setAnimating } = useGameStore();
+  // Clear any stuck animation state on mount
+  useEffect(() => { setAnimating(false); }, [setAnimating]);
   const exploreCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
   const [isDemo, setIsDemo] = useState(false);
   useEffect(() => {
@@ -162,7 +164,7 @@ export default function GamePage() {
         onCityTap={handleCityTap}
         onPOITap={handlePOITap}
         onMapReady={(controls) => { mapControlsRef.current = controls; }}
-        hideGoButton={(!isDemo && voPlaying) || showIntro}
+        hideGoButton={voPlaying || showIntro}
       />
 
       {/* ===== INTRO SCREEN ===== */}

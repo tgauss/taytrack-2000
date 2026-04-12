@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -841,28 +842,27 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
 
       <SleepsCounter />
 
-      <AnimatePresence>
-        {showGoButton && currentLocation === 'vancouver' && (
-          <button
-            key="blast-off-btn"
-            onClick={handleGoNext}
-            disabled={isAnimating}
-            style={{ position: 'absolute', bottom: '25%', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, pointerEvents: 'auto', border: 'none', background: 'linear-gradient(to right, #facc15, #f97316, #ef4444)', padding: '24px 64px', borderRadius: '9999px', fontSize: '28px', fontWeight: 'bold', color: 'black', cursor: 'pointer', boxShadow: '0 0 40px rgba(251,191,36,0.5)', WebkitTapHighlightColor: 'rgba(0,0,0,0.1)' }}
-          >
-            ✈️ BLAST OFF! 🚀
-          </button>
-        )}
-        {showGoButton && currentLocation !== 'vancouver' && (
-          <button
-            key="go-btn"
-            onClick={handleGoNext}
-            disabled={isAnimating}
-            style={{ position: 'absolute', bottom: '25%', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, pointerEvents: 'auto', border: 'none', background: 'linear-gradient(to right, #8b5cf6, #06b6d4)', padding: '20px 48px', borderRadius: '9999px', fontSize: '24px', fontWeight: 'bold', color: 'white', cursor: 'pointer', boxShadow: '0 0 30px rgba(139,92,246,0.4)', minWidth: '220px', WebkitTapHighlightColor: 'rgba(0,0,0,0.1)' }}
-          >
-            GO to {nextLocName}! 👆
-          </button>
-        )}
-      </AnimatePresence>
+      {/* GO buttons portaled to document.body — outside Mapbox's touch handler tree */}
+      {typeof document !== 'undefined' && showGoButton && currentLocation === 'vancouver' && createPortal(
+        <button
+          onClick={handleGoNext}
+          disabled={isAnimating}
+          style={{ position: 'fixed', bottom: '25%', left: '50%', transform: 'translateX(-50%)', zIndex: 99999, pointerEvents: 'auto', border: 'none', background: 'linear-gradient(to right, #facc15, #f97316, #ef4444)', padding: '24px 64px', borderRadius: '9999px', fontSize: '28px', fontWeight: 'bold', color: 'black', cursor: 'pointer', boxShadow: '0 0 40px rgba(251,191,36,0.5)', touchAction: 'manipulation' }}
+        >
+          ✈️ BLAST OFF! 🚀
+        </button>,
+        document.body
+      )}
+      {typeof document !== 'undefined' && showGoButton && currentLocation !== 'vancouver' && createPortal(
+        <button
+          onClick={handleGoNext}
+          disabled={isAnimating}
+          style={{ position: 'fixed', bottom: '25%', left: '50%', transform: 'translateX(-50%)', zIndex: 99999, pointerEvents: 'auto', border: 'none', background: 'linear-gradient(to right, #8b5cf6, #06b6d4)', padding: '20px 48px', borderRadius: '9999px', fontSize: '24px', fontWeight: 'bold', color: 'white', cursor: 'pointer', boxShadow: '0 0 30px rgba(139,92,246,0.4)', minWidth: '220px', touchAction: 'manipulation' }}
+        >
+          GO to {nextLocName}! 👆
+        </button>,
+        document.body
+      )}
 
       <AnimatePresence>
         {phase === 'traveling' && (
