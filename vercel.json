@@ -1,3 +1,19 @@
 {
-  "buildCommand": "rm -rf .next && next build"
+  "buildCommand": "rm -rf .next && next build",
+  "headers": [
+    {
+      "source": "/game",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/_next/static/(.*)",
+      "has": [{ "type": "query", "key": "demo" }],
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
+  ]
 }

@@ -63,7 +63,17 @@ export default function GamePage() {
   const exploreCityId = currentLocation === 'vancouver-return' ? 'vancouver' : currentLocation;
   const [isDemo, setIsDemo] = useState(false);
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.search.includes('demo=true')) setIsDemo(true);
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('demo')) {
+      setIsDemo(true);
+      // Clear all caches when demo param is present (any value)
+      if ('caches' in window) {
+        caches.keys().then(names => names.forEach(name => caches.delete(name)));
+      }
+      // Unregister any service workers
+      navigator.serviceWorker?.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+    }
   }, []);
   const dadMessageCount = useNewMessages();
   // Show intro only when starting fresh at vancouver (not when resuming mid-trip)
