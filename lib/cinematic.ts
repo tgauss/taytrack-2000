@@ -9,7 +9,12 @@
  * - turf.js for precise distance-along-route calculations
  */
 
-import * as turf from '@turf/turf';
+import along from '@turf/along';
+import bearing from '@turf/bearing';
+import bbox from '@turf/bbox';
+import center from '@turf/center';
+import length from '@turf/length';
+import { lineString, point } from '@turf/helpers';
 import type mapboxgl from 'mapbox-gl';
 
 // ---- MATH HELPERS ----
@@ -158,14 +163,14 @@ export function animateRoute(
   const layerId = config.lineLayerId || `${sourceId}-layer`;
 
   // Create a GeoJSON LineString from the route
-  const routeLine = turf.lineString(routeCoords);
-  const pathDistance = turf.length(routeLine, { units: 'kilometers' });
+  const routeLine = lineString(routeCoords);
+  const pathDistance = length(routeLine, { units: 'kilometers' });
 
   // Calculate starting bearing from first segment
   const startPt = routeCoords[0];
   const midIdx = Math.min(5, routeCoords.length - 1);
   const midPt = routeCoords[midIdx];
-  const routeBearing = turf.bearing(turf.point(startPt), turf.point(midPt));
+  const routeBearing = bearing(point(startPt), point(midPt));
   const startBearing = config.bearingRotation === 0 ? routeBearing : config.startBearing || routeBearing;
 
   // Add route source and layer
@@ -216,7 +221,7 @@ export function animateRoute(
     const phase = clamp(elapsed / config.duration);
 
     // Get the point along the route at this phase
-    const alongPoint = turf.along(routeLine, pathDistance * phase, { units: 'kilometers' });
+    const alongPoint = along(routeLine, pathDistance * phase, { units: 'kilometers' });
     const [lng, lat] = alongPoint.geometry.coordinates;
 
     // LERP smooth the target position
@@ -241,9 +246,9 @@ export function animateRoute(
     if (config.bearingRotation === 0) {
       // Follow-the-road mode: look far ahead to get a stable bearing
       const lookAheadPhase = Math.min(phase + 0.08, 1); // Look 8% ahead (was 2%)
-      const lookAheadPt = turf.along(routeLine, pathDistance * lookAheadPhase, { units: 'kilometers' });
+      const lookAheadPt = along(routeLine, pathDistance * lookAheadPhase, { units: 'kilometers' });
       const [laLng, laLat] = lookAheadPt.geometry.coordinates;
-      targetBearing = turf.bearing(turf.point([lng, lat]), turf.point([laLng, laLat]));
+      targetBearing = bearing(point([lng, lat]), point([laLng, laLat]));
     } else {
       // Cinematic rotation mode (flights)
       targetBearing = startBearing - phase * config.bearingRotation;
@@ -349,13 +354,13 @@ export function zoomInToRoute(
   duration = 3000,
 ): Promise<void> {
   return new Promise((resolve) => {
-    const line = turf.lineString(routeCoords);
-    const bbox = turf.bbox(line);
-    const center = turf.center(line).geometry.coordinates;
+    const line = lineString(routeCoords);
+    const routeBbox = bbox(line);
+    const routeCenter = center(line).geometry.coordinates;
 
     // First zoom out to show the globe
     map.flyTo({
-      center: [center[0], center[1]],
+      center: [routeCenter[0], routeCenter[1]],
       zoom: 3,
       pitch: 0,
       bearing: 0,
@@ -365,13 +370,13 @@ export function zoomInToRoute(
     // Then zoom into the route area
     setTimeout(() => {
       map.fitBounds(
-        [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
+        [[routeBbox[0], routeBbox[1]], [routeBbox[2], routeBbox[3]]],
         {
           padding: 100,
           pitch: 60,
-          bearing: turf.bearing(
-            turf.point(routeCoords[0]),
-            turf.point(routeCoords[Math.min(5, routeCoords.length - 1)]),
+          bearing: bearing(
+            point(routeCoords[0]),
+            point(routeCoords[Math.min(5, routeCoords.length - 1)]),
           ),
           duration: duration * 0.7,
         },
