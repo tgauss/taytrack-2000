@@ -239,15 +239,25 @@ export default function GamePage() {
 
       {/* ===== SIMPLIFIED TOP BAR ===== */}
       <div className="absolute top-5 left-5 right-5 z-30 flex items-center justify-between pointer-events-none">
-        {/* Left: Home button only */}
-        <Link href="/" className="pointer-events-auto">
-          <motion.div
-            className="w-16 h-16 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-3xl"
+        {/* Left: Home + Reset */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <Link href="/">
+            <motion.div
+              className="w-16 h-16 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-3xl"
+              whileTap={{ scale: 0.9 }}
+            >
+              🏠
+            </motion.div>
+          </Link>
+          <motion.button
+            onClick={handleReset}
+            className="h-10 px-3 bg-card/60 backdrop-blur-sm rounded-full flex items-center gap-1 shadow border border-border touch-manipulation"
             whileTap={{ scale: 0.9 }}
           >
-            🏠
-          </motion.div>
-        </Link>
+            <span className="text-base">🔄</span>
+            <span className="text-[10px] font-bold text-muted-foreground">Reset</span>
+          </motion.button>
+        </div>
 
         {/* Center: Title (smaller) */}
         <div className="bg-card/70 backdrop-blur-sm rounded-full px-5 py-2 shadow-md border border-border">
