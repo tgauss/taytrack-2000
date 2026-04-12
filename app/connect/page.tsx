@@ -51,6 +51,7 @@ export default function ConnectPage() {
   const [sendError, setSendError] = useState(false);
   const [recording, setRecording] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [tapbackTarget, setTapbackTarget] = useState<string | null>(null);
   const [msgCount, setMsgCount] = useState(0);
   const atLimit = msgCount >= MAX_MESSAGES_PER_SESSION;
@@ -178,8 +179,20 @@ export default function ConnectPage() {
     const ctx = c.getContext('2d');
     if (ctx) ctx.drawImage(video, 0, 0, c.width, c.height);
     streamRef.current?.getTracks().forEach(t => t.stop());
-    const dataUrl = c.toDataURL('image/jpeg', 0.6); // 60% quality — small enough for upload
-    sendMessage('📸', dataUrl);
+    const dataUrl = c.toDataURL('image/jpeg', 0.6);
+    // Show preview instead of immediately sending
+    setCameraActive(false);
+    setPhotoPreview(dataUrl);
+  };
+
+  const sendPhoto = () => {
+    if (!photoPreview) return;
+    sendMessage('📸', photoPreview);
+    setPhotoPreview(null);
+  };
+
+  const discardPhoto = () => {
+    setPhotoPreview(null);
   };
 
   const [recordingTime, setRecordingTime] = useState(0);
@@ -396,7 +409,7 @@ export default function ConnectPage() {
             <div className="flex-1 relative overflow-hidden">
               <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
             </div>
-            <div className="bg-slate-950 py-6 flex items-center justify-center gap-8">
+            <div className="bg-slate-950 py-6 flex items-center justify-center gap-8 safe-area-pb">
               <button
                 onClick={() => { streamRef.current?.getTracks().forEach(t => t.stop()); setCameraActive(false); }}
                 className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-2xl touch-manipulation"
@@ -413,6 +426,31 @@ export default function ConnectPage() {
               <div className="w-14 h-14" /> {/* spacer */}
             </div>
             <canvas ref={canvasRef} className="hidden" />
+          </div>
+        )}
+
+        {/* Photo preview — see what you took before sending */}
+        {photoPreview && (
+          <div className="flex-1 flex flex-col bg-black">
+            <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4">
+              <img src={photoPreview} alt="Your photo" className="max-w-full max-h-full object-contain rounded-2xl" />
+            </div>
+            <div className="bg-slate-950 py-6 px-6 flex items-center justify-center gap-6">
+              <motion.button
+                onClick={discardPhoto}
+                className="flex-1 py-5 bg-white/10 text-white font-bold text-xl rounded-2xl touch-manipulation"
+                whileTap={{ scale: 0.93 }}
+              >
+                🔄 Retake
+              </motion.button>
+              <motion.button
+                onClick={sendPhoto}
+                className="flex-1 py-5 bg-pink-600 text-white font-bold text-xl rounded-2xl touch-manipulation"
+                whileTap={{ scale: 0.93 }}
+              >
+                📸 Send!
+              </motion.button>
+            </div>
           </div>
         )}
 

@@ -45,6 +45,7 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -122,7 +123,18 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
     const ctx = canvas.getContext('2d');
     if (ctx) ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     streamRef.current?.getTracks().forEach(t => t.stop());
-    sendMessage('📸', canvas.toDataURL('image/jpeg', 0.6));
+    setCameraActive(false);
+    setPhotoPreview(canvas.toDataURL('image/jpeg', 0.6));
+  };
+
+  const sendPhoto = () => {
+    if (!photoPreview) return;
+    sendMessage('📸', photoPreview);
+    setPhotoPreview(null);
+  };
+
+  const discardPhoto = () => {
+    setPhotoPreview(null);
   };
 
   const [recordingTime, setRecordingTime] = useState(0);
@@ -352,6 +364,25 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
                       <div className="w-14" />
                     </div>
                     <canvas ref={canvasRef} className="hidden" />
+                  </div>
+                )}
+
+                {/* Photo preview — see before sending */}
+                {photoPreview && (
+                  <div className="text-center">
+                    <div className="rounded-2xl overflow-hidden mb-4 bg-black flex items-center justify-center" style={{ height: '45vh' }}>
+                      <img src={photoPreview} alt="Your photo" className="max-w-full max-h-full object-contain rounded-xl" />
+                    </div>
+                    <div className="flex gap-4">
+                      <motion.button onClick={discardPhoto} whileTap={{ scale: 0.93 }}
+                        className="flex-1 py-4 bg-white/10 text-white font-bold text-lg rounded-2xl touch-manipulation">
+                        🔄 Retake
+                      </motion.button>
+                      <motion.button onClick={sendPhoto} whileTap={{ scale: 0.93 }}
+                        className="flex-1 py-4 bg-pink-600 text-white font-bold text-lg rounded-2xl touch-manipulation">
+                        📸 Send!
+                      </motion.button>
+                    </div>
                   </div>
                 )}
 
