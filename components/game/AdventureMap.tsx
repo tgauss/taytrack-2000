@@ -843,72 +843,24 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
 
       <AnimatePresence>
         {showGoButton && currentLocation === 'vancouver' && (
-          <div
+          <button
             key="blast-off-btn"
-            className="absolute bottom-[25%] left-1/2 -translate-x-1/2 z-[100]"
-            style={{ pointerEvents: 'auto' }}
+            onClick={handleGoNext}
+            disabled={isAnimating}
+            style={{ position: 'absolute', bottom: '25%', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, pointerEvents: 'auto', border: 'none', background: 'linear-gradient(to right, #facc15, #f97316, #ef4444)', padding: '24px 64px', borderRadius: '9999px', fontSize: '28px', fontWeight: 'bold', color: 'black', cursor: 'pointer', boxShadow: '0 0 40px rgba(251,191,36,0.5)', WebkitTapHighlightColor: 'rgba(0,0,0,0.1)' }}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 40, scale: 0.5 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 40, scale: 0.5 }}
-              transition={{ type: 'spring', damping: 12, stiffness: 150, delay: 0.5 }}
-              onClick={() => { if (!isAnimating) handleGoNext(); }}
-              onTouchEnd={(e) => { e.preventDefault(); if (!isAnimating) handleGoNext(); }}
-              className="touch-manipulation cursor-pointer select-none"
-              role="button"
-              tabIndex={0}
-            >
-              <motion.div
-                className="px-16 py-8 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 rounded-full shadow-2xl"
-                animate={{
-                  scale: [1, 1.08, 1],
-                  boxShadow: [
-                    '0 0 30px rgba(251,191,36,0.4), 0 0 60px rgba(249,115,22,0.2)',
-                    '0 0 50px rgba(251,191,36,0.7), 0 0 100px rgba(249,115,22,0.4)',
-                    '0 0 30px rgba(251,191,36,0.4), 0 0 60px rgba(249,115,22,0.2)',
-                  ],
-                }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <span className="flex items-center gap-3 text-black font-bold text-3xl">
-                  <motion.span
-                    animate={{ rotate: [0, -15, 15, 0], y: [0, -5, 0] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: 0.5 }}
-                    className="text-4xl"
-                  >
-                    ✈️
-                  </motion.span>
-                  BLAST OFF!
-                  <motion.span
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 0.8, repeat: Infinity }}
-                    className="text-4xl"
-                  >
-                    🚀
-                  </motion.span>
-                </span>
-              </motion.div>
-            </motion.div>
-          </div>
+            ✈️ BLAST OFF! 🚀
+          </button>
         )}
         {showGoButton && currentLocation !== 'vancouver' && (
-          <div key="go-btn" className="absolute bottom-[25%] left-1/2 -translate-x-1/2 z-[100]" style={{ pointerEvents: 'auto' }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.8 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.8 }}
-              onClick={() => { if (!isAnimating) handleGoNext(); }}
-              onTouchEnd={(e) => { e.preventDefault(); if (!isAnimating) handleGoNext(); }}
-              className="px-10 py-5 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold text-2xl rounded-full shadow-2xl touch-manipulation cursor-pointer select-none"
-              style={{ minWidth: 220, minHeight: 64 }}
-              whileTap={{ scale: 0.95 }}
-              role="button" tabIndex={0}>
-              <span className="flex items-center gap-3">
-                GO to {nextLocName}!
-                <span className="text-3xl">👆</span>
-              </span>
-            </motion.div>
-          </div>
+          <button
+            key="go-btn"
+            onClick={handleGoNext}
+            disabled={isAnimating}
+            style={{ position: 'absolute', bottom: '25%', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, pointerEvents: 'auto', border: 'none', background: 'linear-gradient(to right, #8b5cf6, #06b6d4)', padding: '20px 48px', borderRadius: '9999px', fontSize: '24px', fontWeight: 'bold', color: 'white', cursor: 'pointer', boxShadow: '0 0 30px rgba(139,92,246,0.4)', minWidth: '220px', WebkitTapHighlightColor: 'rgba(0,0,0,0.1)' }}
+          >
+            GO to {nextLocName}! 👆
+          </button>
         )}
       </AnimatePresence>
 
