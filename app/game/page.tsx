@@ -68,14 +68,22 @@ export default function GamePage() {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     if (params.has('demo')) {
+      const demoVal = params.get('demo') || '';
+      const lastDemo = sessionStorage.getItem('taytrack-demo-key');
       setIsDemo(true);
-      // Clear all caches when demo param is present (any value)
-      if ('caches' in window) {
-        caches.keys().then(names => names.forEach(name => caches.delete(name)));
+      // If demo value changed, full reset — fresh adventure
+      if (demoVal !== lastDemo) {
+        sessionStorage.setItem('taytrack-demo-key', demoVal);
+        // Clear game state (reset to vancouver)
+        resetGame();
+        // Clear caches
+        if ('caches' in window) {
+          caches.keys().then(names => names.forEach(name => caches.delete(name)));
+        }
+        navigator.serviceWorker?.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
       }
-      // Unregister any service workers
-      navigator.serviceWorker?.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const dadMessageCount = useNewMessages();
   // Show intro only when starting fresh at vancouver (not when resuming mid-trip)
