@@ -272,23 +272,23 @@ export default function ConnectPage() {
   };
 
   return (
-    <main className="min-h-screen text-white flex flex-col relative">
+    <main className="fixed inset-0 text-white flex flex-col">
       {/* Live sky background */}
       <LiveSky />
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-lg border-b border-white/10 px-4 py-3">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
-          <Link href="/game" className="text-sm text-white/50">← Game</Link>
+      <header className="flex-shrink-0 z-50 bg-slate-950/90 backdrop-blur-lg border-b border-white/10 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <Link href="/game" className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-2xl touch-manipulation">🎮</Link>
           <div className="flex items-center gap-2">
-            <span className="text-xl">💌</span>
-            <h1 className="text-xl font-bold">Kiddo Connect</h1>
+            <span className="text-2xl">💌</span>
+            <h1 className="text-2xl font-bold">Talk to Dad</h1>
           </div>
-          <Link href="/" className="text-sm text-white/50">Home →</Link>
+          <Link href="/" className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-2xl touch-manipulation">🏠</Link>
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col max-w-lg mx-auto w-full">
-        {/* Messages */}
+      <div className="flex-1 flex flex-col w-full min-h-0">
+        {/* Messages — flex-col-reverse makes newest at bottom naturally */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           {messages.length === 0 && (
             <div className="text-center py-16">
@@ -521,30 +521,35 @@ export default function ConnectPage() {
           </div>
         )}
 
-        {/* Bottom input area */}
-        {!cameraActive && !recording && !sending && !atLimit && (
-          <div className="border-t border-white/10 bg-slate-950/90 backdrop-blur-lg p-3 space-y-3">
-            {/* Quick messages row */}
+        {/* Bottom input area — always visible, big kid-friendly buttons */}
+        {!cameraActive && !recording && !sending && !atLimit && !photoPreview && (
+          <div className="flex-shrink-0 border-t border-white/10 bg-slate-950/95 backdrop-blur-lg p-4 space-y-3">
+            {/* Quick messages — big emoji buttons */}
             <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {QUICK_MESSAGES.map((msg, i) => (
-                <button
+                <motion.button
                   key={i}
                   onClick={() => sendMessage(`${msg.emoji} ${msg.text}`)}
-                  className="flex-shrink-0 px-5 py-3 bg-white/5 border border-white/10 rounded-full text-base touch-manipulation hover:bg-white/10 whitespace-nowrap"
+                  className="flex-shrink-0 px-6 py-4 bg-white/10 rounded-2xl text-lg touch-manipulation active:bg-white/20 whitespace-nowrap"
+                  whileTap={{ scale: 0.93 }}
                 >
                   {msg.emoji} {msg.text}
-                </button>
+                </motion.button>
               ))}
             </div>
 
-            {/* Media buttons */}
-            <div className="flex gap-2">
-              <button onClick={startCamera} className="flex-1 py-4 bg-blue-500/15 border border-blue-500/25 rounded-2xl font-bold text-base text-blue-400 touch-manipulation">
+            {/* Media buttons — big and obvious */}
+            <div className="flex gap-3">
+              <motion.button onClick={startCamera}
+                className="flex-1 py-5 bg-blue-500/20 border-2 border-blue-500/30 rounded-2xl font-bold text-xl text-blue-300 touch-manipulation"
+                whileTap={{ scale: 0.93 }}>
                 📸 Photo
-              </button>
-              <button onClick={startRecording} className="flex-1 py-4 bg-red-500/15 border border-red-500/25 rounded-2xl font-bold text-base text-red-400 touch-manipulation">
+              </motion.button>
+              <motion.button onClick={startRecording}
+                className="flex-1 py-5 bg-red-500/20 border-2 border-red-500/30 rounded-2xl font-bold text-xl text-red-300 touch-manipulation"
+                whileTap={{ scale: 0.93 }}>
                 🎤 Voice
-              </button>
+              </motion.button>
             </div>
           </div>
         )}
