@@ -153,13 +153,17 @@ export default function ConnectPage() {
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute('playsinline', 'true');
-        videoRef.current.setAttribute('webkit-playsinline', 'true');
-        await videoRef.current.play();
-      }
+      // Show camera UI first so the <video> element is in the DOM
       setCameraActive(true);
+      // Wait for React to render, then attach stream
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.setAttribute('webkit-playsinline', 'true');
+          videoRef.current.play().catch(() => {});
+        }
+      });
     } catch (e) {
       console.error('Camera error:', e);
     }

@@ -98,13 +98,15 @@ export function KiddoConnect({ isOpen, onClose }: KiddoConnectProps) {
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute('playsinline', 'true');
-        videoRef.current.setAttribute('webkit-playsinline', 'true');
-        await videoRef.current.play();
-      }
       setCameraActive(true);
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.setAttribute('webkit-playsinline', 'true');
+          videoRef.current.play().catch(() => {});
+        }
+      });
     } catch (e) {
       console.error('Camera error:', e);
     }
