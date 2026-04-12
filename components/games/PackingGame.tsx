@@ -81,6 +81,11 @@ export function PackingGame({ onClose }: PackingGameProps) {
     // Clear canvas
     ctx.clearRect(0, 0, w, h);
 
+    // Reset any stale styles
+    ctx.globalAlpha = 1.0;
+    ctx.fillStyle = 'white';
+    ctx.shadowBlur = 0;
+
     // Update and draw items
     const boxX = boxXRef.current;
     const boxLeft = boxX - 12;
@@ -112,13 +117,19 @@ export function PackingGame({ onClose }: PackingGameProps) {
         return false;
       }
 
-      // Draw item
+      // Draw item with glow so it's visible on any background
       const px = (item.x / 100) * w;
       const py = (item.y / 100) * h;
-      ctx.font = `${Math.round(w * 0.08)}px serif`;
+      const emojiSize = Math.round(w * 0.1);
+      ctx.save();
+      ctx.font = `${emojiSize}px serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'white';
+      ctx.shadowBlur = 12;
       ctx.fillText(item.emoji, px, py);
+      ctx.shadowBlur = 0;
+      ctx.restore();
 
       return true;
     });
@@ -136,9 +147,11 @@ export function PackingGame({ onClose }: PackingGameProps) {
       ctx.fillText('📦', boxPx, boxPy);
     }
 
-    // Draw catch zone indicator
+    // Draw catch zone indicator (after box, before next frame)
+    ctx.save();
     ctx.fillStyle = 'rgba(250, 204, 21, 0.15)';
     ctx.fillRect((boxLeft / 100) * w, h * 0.82, ((boxRight - boxLeft) / 100) * w, h * 0.12);
+    ctx.restore();
 
     animFrameRef.current = requestAnimationFrame(gameLoop);
   }, []);
@@ -234,7 +247,7 @@ export function PackingGame({ onClose }: PackingGameProps) {
       <div
         ref={gameAreaRef}
         className="absolute inset-0 pt-20 z-10"
-        onTouchMove={(e) => { e.preventDefault(); handleMove(e.touches[0].clientX); }}
+        onTouchMove={(e) => { handleMove(e.touches[0].clientX); }}
         onTouchStart={(e) => handleMove(e.touches[0].clientX)}
         onMouseMove={(e) => handleMove(e.clientX)}
         onMouseDown={(e) => handleMove(e.clientX)}

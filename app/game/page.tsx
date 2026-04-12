@@ -164,7 +164,7 @@ export default function GamePage() {
         onCityTap={handleCityTap}
         onPOITap={handlePOITap}
         onMapReady={(controls) => { mapControlsRef.current = controls; }}
-        hideGoButton={voPlaying || showIntro}
+        hideGoButton={voPlaying || showIntro || !!activeGame || !!selectedPOI || menuPanel !== 'none'}
       />
 
       {/* ===== INTRO SCREEN ===== */}
