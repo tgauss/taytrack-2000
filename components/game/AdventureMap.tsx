@@ -181,17 +181,26 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/standard',
+        style: {
+          version: 8,
+          imports: [
+            {
+              id: 'basemap',
+              url: 'mapbox://styles/mapbox/standard',
+              config: {
+                lightPreset: 'dusk',
+                showPointOfInterestLabels: false,
+              },
+            },
+          ],
+          sources: {},
+          layers: [],
+        },
         center: initialCenter,
         zoom: isAtStart ? 16 : ARRIVAL_ZOOM,
         pitch: isAtStart ? 55 : ARRIVAL_PITCH,
         bearing: 0,
         antialias: true,
-        config: {
-          basemap: {
-            lightPreset: 'dusk',
-          },
-        },
       });
 
       // Force resize after a delay — fixes iPad blank map issue
@@ -204,13 +213,6 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       // Resize again when style loads — critical for iPad
       map.current.resize();
       setMapLoaded(true);
-
-      // Reinforce night preset after style loads (belt-and-suspenders)
-      try {
-        map.current.setConfigProperty('basemap', 'lightPreset', 'night');
-      } catch (e) {
-        console.warn('[TAYTRACK] setConfigProperty failed:', e);
-      }
 
       // Add 3D terrain (skip on mobile — can cause GPU issues)
       const isMobileDevice = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
