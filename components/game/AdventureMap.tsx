@@ -189,7 +189,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
         antialias: true,
         config: {
           basemap: {
-            lightPreset: 'night',
+            lightPreset: 'dusk',
           },
         },
       });
@@ -231,7 +231,7 @@ export function AdventureMap({ onCityTap, onPOITap, onMapReady, hideGoButton }: 
       } catch {}
 
       // 3D vehicle models — skip on mobile (model layer not supported on all devices)
-      if (!isMobile) try {
+      if (!isMobileDevice) try {
         // Airplane model (hidden by default, shown during flights)
         map.current.addSource('airplane-model', {
           type: 'model',
