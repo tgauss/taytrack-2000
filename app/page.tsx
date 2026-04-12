@@ -38,6 +38,13 @@ export default function HomePage() {
       gradient: 'from-pink-500 to-rose-500',
     },
     {
+      href: '/game?panel=games',
+      emoji: '🧩',
+      title: 'Play Games',
+      subtitle: 'Packing game & memory cards',
+      gradient: 'from-amber-500 to-orange-500',
+    },
+    {
       href: '/prettylady',
       emoji: '💕',
       title: "Amanda's View",

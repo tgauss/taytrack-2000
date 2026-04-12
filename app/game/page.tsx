@@ -86,6 +86,14 @@ export default function GamePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const dadMessageCount = useNewMessages();
+  // Auto-open panel if ?panel= param is set (e.g. from home page "Play Games")
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const panel = new URLSearchParams(window.location.search).get('panel');
+    if (panel === 'games') setMenuPanel('games');
+    else if (panel === 'connect') setMenuPanel('connect');
+    else if (panel === 'journal') setMenuPanel('journal');
+  }, []);
   // Show intro only when starting fresh at vancouver (not when resuming mid-trip)
   useEffect(() => {
     if (currentLocation === 'vancouver') {
@@ -241,7 +249,7 @@ export default function GamePage() {
       <div className="absolute top-5 left-5 right-5 z-30 flex items-center justify-between pointer-events-none">
         {/* Left: Home + Reset */}
         <div className="flex items-center gap-2 pointer-events-auto">
-          <Link href="/">
+          <Link href="/" onClick={() => stopElevenLabsSpeech()}>
             <motion.div
               className="w-16 h-16 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border border-border touch-manipulation text-3xl"
               whileTap={{ scale: 0.9 }}
